@@ -1,6 +1,6 @@
 # Open Pickleball Tourney
 
-A local Django application for adult community pickleball: registration, check-in, draws, court scheduling, scores, results, and portable event records. Implementation is in progress. **The local demo runs; the R1 release gate is not complete.** See [IMPLEMENTATION.md](IMPLEMENTATION.md) for evidence and limits and [roadmap.md](roadmap.md) for the next work.
+A local Django application for adult community pickleball: registration, check-in, draws, court scheduling, scores, results, and portable event records. Implementation is in progress. **The local demo runs; the R1 release gate is not complete.** See [IMPLEMENTATION.md](IMPLEMENTATION.md) for evidence and limits, [roadmap.md](roadmap.md) for the next work, and the [online documentation showcase](https://ryan258.github.io/open-pickleball-tourney/) (source in [`docs/`](docs/)).
 
 ## Start the local demo
 
@@ -70,5 +70,9 @@ A scorer must have an active event scorer role **and** an assignment to the matc
 ```
 
 The October 4 agent runs covered the named focused modules, not a separate full-suite run. They take seconds in this workspace. Real concurrent PostgreSQL clients, provider delivery, load testing, browser/device coverage and assistive-technology checks remain separate work.
+
+## Documentation & online showcase
+
+A static documentation portal and tournament showcase is hosted on GitHub Pages at [https://ryan258.github.io/open-pickleball-tourney/](https://ryan258.github.io/open-pickleball-tourney/). Source files live in [`docs/`](docs/) and publish automatically via [`.github/workflows/pages.yml`](.github/workflows/pages.yml). Note that GitHub Pages hosts only static documentation and quickstart instructions; the full dynamic tournament engine runs locally or on any Python WSGI/PaaS host.
 
 See [OPERATIONS.md](OPERATIONS.md) for backups, restores, uncertain delivery, and hosting boundaries. No license has been selected; this project does not yet claim an open-source release or sanctioned-event approval.

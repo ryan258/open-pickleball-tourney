@@ -14,7 +14,7 @@ Read [README.md](README.md) for the short launcher and [IMPLEMENTATION.md](IMPLE
 
 The app runs at `http://127.0.0.1:8000/`. Choose **Open organizer demo**. The launcher uses `.data/demo`, preserves existing demo work, forces file-based mail, and manages a worker. Normal local events use `./tour serve` and `.data` instead. See [OPERATIONS.md](OPERATIONS.md) for trusted local login, delivery reconciliation, backup and restore.
 
-No Git repository exists in this workspace. No staging, commits, pushing, deployment, external publication, actual participant messages, provider enrollment or license selection occurred. The user’s local implementation authorization remains in force; external actions remain owner-controlled. Follow the supplied operator capsule and use targeted verification. Give Ryan long/full-suite commands rather than repeatedly running them. No subagents were used.
+The workspace is tracked in Git (`main` branch with `origin` remote). The user’s local implementation authorization remains in force; remote pushing and external deployment remain owner-controlled. Follow the supplied operator capsule and use targeted verification. Give Ryan long/full-suite commands rather than repeatedly running them. No subagents were used.
 
 ## Completed in the October 4 continuation
 
@@ -30,6 +30,7 @@ No Git repository exists in this workspace. No staging, commits, pushing, deploy
 - [x] Added explicit partial results, correction-required package state, no-show decision notice after a ten-minute call, and private entry-recovery forms.
 - [x] Added allowlisted, hashed archives with scoped relationship validation, atomic restore, ID remapping, private draft status and external-action suppression.
 - [x] Added focused engine/runtime regression checks and honest setup/recovery/coverage documentation.
+- [x] Added static documentation portal, tournament feature showcase, and GitHub Actions deployment workflow for GitHub Pages in `docs/` and `.github/workflows/pages.yml`.
 
 ## Evidence actually obtained
 
