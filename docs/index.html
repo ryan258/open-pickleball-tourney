@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Pickleball Tourney — Community Tournament Software</title>
+  <meta name="description" content="Local-first Django application for adult community pickleball: registration, check-in, seeded draws, court scheduling, live scores, and offline paper recovery packs.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="header-nav">
+    <div class="nav-container">
+      <a href="#hero" class="brand" id="brand-link">
+        <div class="brand-icon">🏓</div>
+        <span>Open Pickleball Tourney</span>
+        <span class="brand-tag">Django LTS</span>
+      </a>
+      <nav>
+        <ul class="nav-links">
+          <li><a href="#features" class="nav-link">Features</a></li>
+          <li><a href="#quickstart" class="nav-link">Run &amp; Deploy</a></li>
+          <li><a href="#workflow" class="nav-link">Event Workflow</a></li>
+          <li><a href="#architecture" class="nav-link">Architecture</a></li>
+          <li>
+            <a href="https://github.com/ryan258/open-pickleball-tourney" class="btn-github" id="nav-github-link" target="_blank" rel="noopener noreferrer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+              GitHub
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="pulse-dot"></span>
+          Community Tournament Platform
+        </div>
+        <h1 class="hero-title">
+          Fast, Resilient <br>
+          <span class="hero-gradient-text">Pickleball Tournaments</span>
+        </h1>
+        <p class="hero-desc">
+          Engineered for community directors and club organizers. Streamline registration, automated seeded draws, court assignment, and real-time match scoring — with complete offline recovery packs if internet drops.
+        </p>
+        <div class="hero-actions">
+          <a href="#quickstart" class="btn-primary" id="hero-quickstart-btn">Get Started Locally</a>
+          <a href="https://github.com/ryan258/open-pickleball-tourney" class="btn-secondary" id="hero-repo-btn" target="_blank" rel="noopener noreferrer">View Source</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-image-wrapper">
+          <img src="assets/hero.jpg" alt="Tournament pickleball paddle and glowing court illustration" width="800" height="450" loading="eager">
+          <div class="hero-image-overlay"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Notice / Runtime Clarification -->
+    <section class="notice-section" id="architecture">
+      <div class="notice-card">
+        <div class="notice-icon">💡</div>
+        <div class="notice-content">
+          <h2>Architecture Note: Dynamic Django Application</h2>
+          <p>
+            Open Pickleball Tourney is a full-stack Python 3.13 / Django 5.2 LTS application with immediate transactions, durable outbox message delivery, and role-based access. While this documentation portal is hosted statically on <strong>GitHub Pages</strong>, the actual tournament management runtime runs either locally on your laptop or hosted on any Python WSGI/PaaS platform.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature Highlights -->
+    <section class="features-section" id="features">
+      <div class="section-header">
+        <span class="section-tag">Tournament Capabilities</span>
+        <h2 class="section-title">Engineered for Event-Day Reality</h2>
+        <p class="section-desc">Designed around common tournament pitfalls: spotty Wi-Fi, last-minute partner changes, rest intervals, and paper fallbacks.</p>
+      </div>
+      <div class="features-grid">
+        <article class="feature-card">
+          <div class="feature-icon-wrapper">🎯</div>
+          <h3 class="feature-title">Seeded Draws &amp; Round-Robins</h3>
+          <p class="feature-text">Deterministic bracket generation including single elimination, double elimination with optional reset match, and snake-seeded pool play.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon-wrapper">⚡</div>
+          <h3 class="feature-title">Live Court Scheduling</h3>
+          <p class="feature-text">Automated conflict detection: enforces player rest intervals, prevents double-booking, and handles court suspensions immediately.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon-wrapper">📄</div>
+          <h3 class="feature-title">Printable Recovery Pack</h3>
+          <p class="feature-text">One-click export of an event revision pack with match codes and paper scoring grids. If power or Wi-Fi fails, play continues without hesitation.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon-wrapper">👥</div>
+          <h3 class="feature-title">Doubles Partner Consent</h3>
+          <p class="feature-text">Both partners must explicitly accept their invitation. Prevents phantom entries and secures accurate check-in records.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon-wrapper">🔒</div>
+          <h3 class="feature-title">Scoped Scorer Access</h3>
+          <p class="feature-text">Umpires and volunteers receive scoped match PINs. They can only record authorized match scores without accessing event settings or financial data.</p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon-wrapper">💾</div>
+          <h3 class="feature-title">Data Sovereignty</h3>
+          <p class="feature-text">Export full JSON/CSV event archives and SQLite snapshots anytime. No proprietary lock-in or subscription gates.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Quickstart & Run Tabs -->
+    <section class="quickstart-section" id="quickstart">
+      <div class="section-header">
+        <span class="section-tag">Quickstart</span>
+        <h2 class="section-title">Run or Deploy in Minutes</h2>
+        <p class="section-desc">Choose your environment: run the interactive local demo, serve on your LAN, or host in the cloud.</p>
+      </div>
+
+      <div class="tab-container">
+        <div class="tab-header" role="tablist">
+          <button class="tab-btn active" data-tab="tab-demo" role="tab" id="tab-btn-demo">🚀 Local Demo</button>
+          <button class="tab-btn" data-tab="tab-serve" role="tab" id="tab-btn-serve">💻 Local Production</button>
+          <button class="tab-btn" data-tab="tab-deploy" role="tab" id="tab-btn-deploy">☁️ Cloud Hosting</button>
+          <button class="tab-btn" data-tab="tab-backup" role="tab" id="tab-btn-backup">🛡️ Backups &amp; Restores</button>
+        </div>
+
+        <!-- Tab 1: Local Demo -->
+        <div class="tab-content active" id="tab-demo" role="tabpanel">
+          <h3>Interactive Organizer Demo</h3>
+          <p>Launches an isolated synthetic event with 32 players, 16 doubles teams, 4 courts, and 24 round-robin matches. No password required.</p>
+          <div class="terminal-card">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="terminal-dot red"></span>
+                <span class="terminal-dot yellow"></span>
+                <span class="terminal-dot green"></span>
+              </div>
+              <span class="terminal-title">Terminal</span>
+              <button class="copy-btn" data-clipboard-target="code-demo" id="copy-demo-btn">Copy</button>
+            </div>
+            <pre class="terminal-body"><code id="code-demo"><span class="cmd-comment"># Clone the repository</span>
+<span class="cmd-prompt">$</span> git clone https://github.com/ryan258/open-pickleball-tourney.git
+<span class="cmd-prompt">$</span> cd open-pickleball-tourney
+
+<span class="cmd-comment"># Start the demo (migrates isolated DB, starts mail worker, opens on 127.0.0.1:8000)</span>
+<span class="cmd-prompt">$</span> ./tour</code></pre>
+          </div>
+          <p>Then open <a href="http://127.0.0.1:8000" target="_blank" rel="noopener noreferrer" style="color: var(--accent-lime);">http://127.0.0.1:8000</a> and click <strong>Open organizer demo</strong>.</p>
+        </div>
+
+        <!-- Tab 2: Local Serve -->
+        <div class="tab-content" id="tab-serve" role="tabpanel">
+          <h3>Your Own Local Event</h3>
+          <p>Run your club's actual tournament locally. Starts the server and background worker without demo data.</p>
+          <div class="terminal-card">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="terminal-dot red"></span>
+                <span class="terminal-dot yellow"></span>
+                <span class="terminal-dot green"></span>
+              </div>
+              <span class="terminal-title">Terminal</span>
+              <button class="copy-btn" data-clipboard-target="code-serve" id="copy-serve-btn">Copy</button>
+            </div>
+            <pre class="terminal-body"><code id="code-serve"><span class="cmd-comment"># Start local tournament service</span>
+<span class="cmd-prompt">$</span> ./tour serve
+
+<span class="cmd-comment"># In another terminal, generate your private 15-minute organizer link</span>
+<span class="cmd-prompt">$</span> .venv/bin/python manage.py organizer_link you@example.org</code></pre>
+          </div>
+        </div>
+
+        <!-- Tab 3: Cloud Deploy -->
+        <div class="tab-content" id="tab-deploy" role="tabpanel">
+          <h3>Cloud Deployment (PaaS / Docker / VPS)</h3>
+          <p>Deploy to Render, Fly.io, Railway, or any Linux server using Gunicorn and PostgreSQL.</p>
+          <div class="terminal-card">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="terminal-dot red"></span>
+                <span class="terminal-dot yellow"></span>
+                <span class="terminal-dot green"></span>
+              </div>
+              <span class="terminal-title">Bash</span>
+              <button class="copy-btn" data-clipboard-target="code-deploy" id="copy-deploy-btn">Copy</button>
+            </div>
+            <pre class="terminal-body"><code id="code-deploy"><span class="cmd-comment"># Environment configuration (.env)</span>
+DATABASE_URL=postgresql://user:password@host:5432/tourney
+SECRET_KEY=&lt;generate-random-secret&gt;
+DEBUG=0
+ALLOWED_HOSTS=tourney.yourdomain.org
+
+<span class="cmd-comment"># Run migrations &amp; collect static assets</span>
+python manage.py migrate --noinput
+python manage.py collectstatic --noinput
+
+<span class="cmd-comment"># Start WSGI server &amp; Outbox worker</span>
+gunicorn config.wsgi:application --bind 0.0.0.0:8000
+python manage.py work_outbox</code></pre>
+          </div>
+        </div>
+
+        <!-- Tab 4: Backups -->
+        <div class="tab-content" id="tab-backup" role="tabpanel">
+          <h3>Deterministic SQLite Backups</h3>
+          <p>Create consistent SQLite snapshots with cryptographic SHA-256 manifests and restore with automatic verification.</p>
+          <div class="terminal-card">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="terminal-dot red"></span>
+                <span class="terminal-dot yellow"></span>
+                <span class="terminal-dot green"></span>
+              </div>
+              <span class="terminal-title">Terminal</span>
+              <button class="copy-btn" data-clipboard-target="code-backup" id="copy-backup-btn">Copy</button>
+            </div>
+            <pre class="terminal-body"><code id="code-backup"><span class="cmd-comment"># Create verified snapshot archive</span>
+<span class="cmd-prompt">$</span> .venv/bin/python manage.py backup_local --output .data/backups/event-day.tar.gz
+
+<span class="cmd-comment"># Restore into a separate verified directory</span>
+<span class="cmd-prompt">$</span> .venv/bin/python manage.py restore_local .data/backups/event-day.tar.gz --output-dir .data/restored-event-day</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tournament Day Pipeline -->
+    <section class="workflow-section" id="workflow">
+      <div class="section-header">
+        <span class="section-tag">Operations</span>
+        <h2 class="section-title">The 7-Step Tournament Lifecycle</h2>
+        <p class="section-desc">From initial division setup to final certified results export.</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <span class="step-number">Step 01</span>
+          <h3 class="step-title">Configure Event</h3>
+          <p class="step-desc">Set divisions, capacity limits, court hours, and scoring rules (rally scoring, win-by-2).</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">Step 02</span>
+          <h3 class="step-title">Registration</h3>
+          <p class="step-desc">Register participants with individual links. Doubles partners independently verify acceptance.</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">Step 03</span>
+          <h3 class="step-title">Check-In Desk</h3>
+          <p class="step-desc">Record player arrival and accommodations. Generate and review the seeded draw preview.</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">Step 04</span>
+          <h3 class="step-title">Court Proposals</h3>
+          <p class="step-desc">Commit court assignments. The engine validates player rest and court availability automatically.</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">Step 05</span>
+          <h3 class="step-title">Score Recording</h3>
+          <p class="step-desc">Scorers enter game scores. Retirement records partial games cleanly without breaking dependent brackets.</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">Step 06</span>
+          <h3 class="step-title">Certify Divisions</h3>
+          <p class="step-desc">Finalize completed divisions or mark interrupted play as partial with full audit logs.</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">Step 07</span>
+          <h3 class="step-title">Export &amp; Portability</h3>
+          <p class="step-desc">Download public standings, private event archives, or clean roster CSV packages.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-container">
+      <div class="footer-copy">
+        <p>&copy; 2026 Open Pickleball Tourney. Developed for community clubs and local tournaments.</p>
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/ryan258/open-pickleball-tourney" target="_blank" rel="noopener noreferrer">Source Code</a></li>
+        <li><a href="https://github.com/ryan258/open-pickleball-tourney/blob/main/spec.md" target="_blank" rel="noopener noreferrer">Specification</a></li>
+        <li><a href="https://github.com/ryan258/open-pickleball-tourney/blob/main/OPERATIONS.md" target="_blank" rel="noopener noreferrer">Operations Guide</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
