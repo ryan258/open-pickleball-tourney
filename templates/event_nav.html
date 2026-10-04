@@ -1,0 +1,16 @@
+<nav class="desk-nav" aria-label="Event desk">
+<a class="desk-back" href="/dashboard/">← All my events</a>
+<p class="eyebrow">EVENT WORKSPACE</p>
+{% if 'view' in caps %}<a href="?tab=overview" {% if tab == 'overview' %}aria-current="page"{% endif %}>◫ <span>Overview</span></a>{% endif %}
+{% if 'operate' in caps %}<a href="?tab=entries" {% if tab == 'entries' %}aria-current="page"{% endif %}>♧ <span>Players & check-in</span></a><a href="?tab=courts" {% if tab == 'courts' %}aria-current="page"{% endif %}>▦ <span>Courts & schedule</span></a>{% endif %}
+{% if 'score' in caps %}<a href="?tab=matches" {% if tab == 'matches' %}aria-current="page"{% endif %}>↗ <span>Matches & scores</span></a>{% endif %}
+{% if 'view' in caps %}<a href="?tab=results" {% if tab == 'results' %}aria-current="page"{% endif %}>≡ <span>Results</span></a>{% endif %}
+{% if 'promote' in caps %}<a href="?tab=promotion" {% if tab == 'promotion' %}aria-current="page"{% endif %}>✳ <span>Share & promote</span></a>{% endif %}
+{% if 'finance' in caps %}<a href="?tab=finance" {% if tab == 'finance' %}aria-current="page"{% endif %}>＄ <span>Payments</span></a>{% endif %}
+{% if 'evidence' in caps %}<a href="?tab=sanction" {% if tab == 'sanction' %}aria-current="page"{% endif %}>◇ <span>Approval records</span></a>{% endif %}
+{% if 'export' in caps %}<a href="?tab=reports" {% if tab == 'reports' %}aria-current="page"{% endif %}>↓ <span>Reports & exports</span></a>{% endif %}
+{% if 'staff' in caps %}<a href="?tab=staff" {% if tab == 'staff' %}aria-current="page"{% endif %}>＋ <span>Event staff</span></a>{% endif %}
+{% if 'edit' in caps %}<a href="?tab=activity" {% if tab == 'activity' %}aria-current="page"{% endif %}>◷ <span>Activity & delivery</span></a><a href="{% url 'event_edit' event.slug %}">⚙ <span>Event settings</span></a>{% endif %}
+<div class="desk-nav-footer"><span class="badge">{{ role|capfirst }}</span><a href="{% url 'event' event.slug %}">View event page ↗</a></div>
+</nav>
+

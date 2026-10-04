@@ -1,0 +1,23 @@
+{% load static tourney_tags %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Open Tourney · Make a little court time{% endblock %}</title>
+  <meta name="description" content="Find your next pickleball event, bring your community together, and keep the day running smoothly.">
+  {% block meta %}{% endblock %}
+  <link rel="stylesheet" href="{% static 'app.css' %}"><script src="{% static 'app.js' %}" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <a class="brand" href="/" aria-label="Open Tourney home"><span class="brand-ball" aria-hidden="true">⠿</span><span>open<span class="brand-light">tourney</span><small>PICKLEBALL, TOGETHER.</small></span></a>
+  <nav aria-label="Main navigation"><a href="/">Find an event</a>{% if user.is_authenticated %}<a href="/dashboard/">My events</a><a class="button small" href="/events/new/">+ Host an event</a><form method="post" action="/logout/" class="inline">{% csrf_token %}<button class="text-button">Sign out</button></form>{% else %}<a href="/login/">Organizer sign in</a><a class="button small" href="/login/">Host an event <span aria-hidden="true">↗</span></a>{% endif %}</nav>
+</header>
+{% if demo_mode %}<div class="demo-strip"><span>LOCAL DEMO · Synthetic events and players</span><span><a href="/mailbox/">Local mailbox</a>{% if not user.is_authenticated %}<form method="post" action="/demo-login/" class="inline">{% csrf_token %}<button class="text-button">Open organizer demo →</button></form>{% endif %}</span></div>{% endif %}
+{% if messages %}<div class="messages" aria-live="polite">{% for message in messages %}<p class="notice {{ message.tags }}">{{ message }}</p>{% endfor %}</div>{% endif %}
+<div id="connection-status" class="connection-status" role="status" hidden>Offline. Changes cannot be saved. Use your printed scoresheets and reconcile when connected.</div>
+<main id="main">{% block content %}{% endblock %}</main>
+<footer class="site-footer"><span class="footer-wordmark">More play. Less paperwork.</span><span>Open Tourney · Built for the people who bring people together.</span><a href="/">Back to events ↑</a></footer>
+</body></html>
+
