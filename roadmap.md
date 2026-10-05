@@ -2,11 +2,11 @@
 
 **Status: Local application runnable; R1 implementation and release evidence incomplete**  
 **Updated: October 4, 2026, America/Chicago**  
-**Workspace: `/Users/ryanjohnson/Projects/open-pickleball-tourney`**
+**Workspace: `<repository root>`**
 
 ## Start here
 
-Read [README.md](README.md) for the short launcher and [IMPLEMENTATION.md](IMPLEMENTATION.md) for delivered behavior, acceptance coverage and limits. [spec.md](spec.md) remains the target. The original paused scaffold handoff is retained in [docs/handoff-2026-10-03.md](docs/handoff-2026-10-03.md); its “not runnable” status is historical.
+Read [README.md](README.md) for the short launcher and [IMPLEMENTATION.md](IMPLEMENTATION.md) for delivered behavior, acceptance coverage and limits. [spec.md](spec.md) remains the target. The original paused scaffold handoff is retained in [archive/handoff-2026-10-03.md](archive/handoff-2026-10-03.md); its “not runnable” status is historical.
 
 ```sh
 ./tour
@@ -14,7 +14,7 @@ Read [README.md](README.md) for the short launcher and [IMPLEMENTATION.md](IMPLE
 
 The app runs at `http://127.0.0.1:8000/`. Choose **Open organizer demo**. The launcher uses `.data/demo`, preserves existing demo work, forces file-based mail, and manages a worker. Normal local events use `./tour serve` and `.data` instead. See [OPERATIONS.md](OPERATIONS.md) for trusted local login, delivery reconciliation, backup and restore.
 
-The workspace is tracked in Git (`main` branch with `origin` remote). The user’s local implementation authorization remains in force; remote pushing and external deployment remain owner-controlled. Follow the supplied operator capsule and use targeted verification. Give Ryan long/full-suite commands rather than repeatedly running them. No subagents were used.
+The repository is public on GitHub (`main`, `origin`). Remote pushing, GitHub Pages enablement, license choice and deployment remain owner-controlled. Give Ryan test commands rather than running suites repeatedly.
 
 ## Completed in the October 4 continuation
 
@@ -32,6 +32,16 @@ The workspace is tracked in Git (`main` branch with `origin` remote). The user�
 - [x] Added focused engine/runtime regression checks and honest setup/recovery/coverage documentation.
 - [x] Added static documentation portal, tournament feature showcase, and GitHub Actions deployment workflow for GitHub Pages in `docs/` and `.github/workflows/pages.yml`.
 
+## October 5 review fixes (code written; the new tests have **not been run by the agent**)
+
+- [x] Duplicate division name is a form error (was HTTP 500); unreleased pool/double-elimination formats hidden unless `ENABLE_EXPERIMENTAL_FORMATS=1`.
+- [x] Withdrawn players receive their notice; staff links for closed events return a clear 410 without signing in; draft titles no longer leak via the entry page.
+- [x] Archive import is owner-only; blocking a court clears planned ready matches; check-in cannot be undone during an active match.
+- [x] Schedule preview/commit preload people and rest facts (was ~8,800 queries for the 24-match demo).
+- [x] Proxy support (`TRUST_PROXY_SSL`, `TRUST_FORWARDED_FOR`), per-recipient email throttles, expired-session pruning, JSON `Accept` parsing, safe `gunicorn` defaults.
+- [x] Docs corrected (showcase claims, stale test/GitNexus statements, handoff moved to `archive/`, `plan.md` removed), unused imports/dead code removed, test workflow added.
+- [ ] Still open from the review: first-fit scheduling still rescans from the event start per match (needs a per-court cursor before 8-division events); per-request role caching; tests for registration/partner/finance/sanction views; formatter and unminified CSS source.
+
 ## Evidence actually obtained
 
 - Engine module: **4 tests passed** including round-robin pair coverage and deterministic single/double-elimination loss counts for 2–16 entrants, completed/incomplete score boundaries, and a three-way tie.
@@ -40,7 +50,7 @@ The workspace is tracked in Git (`main` branch with `origin` remote). The user�
 - Browser: local demo sign-in → four individual check-ins → start → enter 11–7 → review → confirm succeeded. Those four check-ins and one completed match remain in `.data/demo` deliberately; the rest of the demo remains available.
 - The match page measured at **320 and 1,280 CSS pixels without document-level horizontal overflow**. Native IAB screenshot capture was clipped at larger viewport overrides; full desktop visual inspection and the specified device/assistive-technology matrix are still open.
 - SQLite backup and separate-directory restore succeeded with synthetic data. Restore invalidated old tokens/sessions and disabled event email. No measured disaster-recovery RPO/RTO claim.
-- No full-suite command, GitNexus analysis, PostgreSQL test, live provider operation, production deployment or accessibility conformance evaluation was run.
+- October 5 review run: `manage.py check`, migration drift check, `check --deploy` and the full 35-test suite passed before the review fixes. GitNexus indexes the project. No PostgreSQL test, live provider operation, production deployment or accessibility conformance evaluation was run.
 
 ## Next implementation work
 
@@ -65,10 +75,7 @@ Continue from the current source; do not recreate the project or restart specifi
 ## Owner-run verification commands
 
 ```sh
-# Focused current modules (fast locally)
-.venv/bin/python manage.py test tourney.tests.test_engine tourney.tests.test_runtime
-
-# Full discovery, when Ryan chooses to run it
+# Whole suite (the two modules are the only discovery targets)
 .venv/bin/python manage.py test
 ```
 

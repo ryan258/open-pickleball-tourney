@@ -14,6 +14,8 @@ Outside the launcher, the application and worker are separate processes:
 .venv/bin/python manage.py work_outbox
 ```
 
+Behind a TLS-terminating proxy set `TRUST_PROXY_SSL=1` (trusts `X-Forwarded-Proto`, avoiding redirect loops and CSRF origin failures) and `TRUST_FORWARDED_FOR=1` (rate limits then use the proxy's rightmost client address instead of one shared proxy address). Enable them only when the proxy overwrites those headers. Also set `SITE_URL` to the public HTTPS origin: email links and trusted origins derive from it. `ALLOW_ORGANIZER_SIGNUP` defaults to closed under `gunicorn`. Pools and double elimination are hidden in the division form unless `ENABLE_EXPERIMENTAL_FORMATS=1`.
+
 A future hosted installation should run a supervised WSGI process (gunicorn is pinned) and worker, with TLS, explicit host/secret settings, protected persistent storage, a reviewed mail backend and tested backups. `DEBUG=0` requires `SECRET_KEY` and enables secure cookies, HTTPS redirects and HSTS. HTTPS reverse-proxy trust and PostgreSQL TLS settings require deployment-specific review; no deployment has been verified. Run `manage.py check --deploy` under the actual production environment before exposing it. The application does not create accounts with password authentication by default.
 
 ## Notification evidence
@@ -22,7 +24,7 @@ Registration and results commit independently of delivery. The worker uses durab
 
 A crashed send or transport exception becomes **uncertain**. These rows are not automatically retried. In **Activity & delivery**, reconcile the displayed Message-ID against mail/provider evidence, then record acceptance, suppress a resend, or explicitly attest non-acceptance and queue a retry. At most three attempts are allowed. The stable identity is retained on retry; provider-side deduplication is not guaranteed.
 
-Marketing messages are suppressed because no campaign/opt-in workflow is enabled. Restored events suppress outbound messages. The worker expires waitlist offers, requeues eligible next entries, clears old rate buckets and removes auth tokens seven days after expiry. Participant-data retention/deidentification is **not implemented**; do not treat token cleanup as a privacy-retention workflow.
+Marketing messages are suppressed because no campaign/opt-in workflow is enabled. Restored events suppress outbound messages. The worker expires waitlist offers, requeues eligible next entries, clears old rate buckets and removes auth tokens seven days after expiry and expired sessions. Participant-data retention/deidentification is **not implemented**; do not treat token cleanup as a privacy-retention workflow.
 
 ## During a connectivity problem
 

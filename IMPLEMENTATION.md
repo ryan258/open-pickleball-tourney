@@ -24,7 +24,7 @@ The UI uses labeled native controls and list/table representations. It has no dr
 | Backup and isolated restore | Synthetic SQLite snapshot/hash/integrity and restore suppression succeeded | No measured RPO/RTO, off-machine recovery, or PostgreSQL recovery |
 | Shell/Python syntax and static collection | Passed | Not a deployment/security certification |
 
-The latest verification evidence is summarized in roadmap.md. No full-suite discovery command, GitNexus analysis, provider call, production deployment or external message was performed by the agent.
+The latest verification evidence is summarized in roadmap.md. The 35-test suite passed on October 5 before that day's review fixes; the regression tests added with those fixes are unrun until the owner runs `manage.py test`. No provider call, production deployment or external message was performed by the agent.
 
 ## Acceptance coverage
 

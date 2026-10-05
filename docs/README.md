@@ -5,7 +5,7 @@ This directory contains the static documentation site, user guides, and architec
 ## Live Documentation Site
 
 - **URL**: `https://ryan258.github.io/open-pickleball-tourney/`
-- **Source**: `docs/` on `main` branch (deployed via [`.github/workflows/pages.yml`](../.github/workflows/pages.yml) or GitHub Pages branch configuration).
+- **Source**: `docs/` on `main` branch (deployed via [`.github/workflows/pages.yml`](../.github/workflows/pages.yml); GitHub Pages must be enabled in repository settings first).
 
 ## Directory Structure
 
@@ -14,7 +14,6 @@ This directory contains the static documentation site, user guides, and architec
 - [`app.js`](app.js): Vanilla JavaScript for interactive quickstart command switching and clipboard copying.
 - [`assets/`](assets/): High-resolution visual assets including hero banner graphic.
 - [`.nojekyll`](.nojekyll): Prevents Jekyll static site processing on GitHub Pages.
-- [`handoff-2026-10-03.md`](handoff-2026-10-03.md): Historical pause/restart handoff document.
 
 ## Architecture & Hosting Boundary
 

@@ -23,7 +23,7 @@
       <nav>
         <ul class="nav-links">
           <li><a href="#features" class="nav-link">Features</a></li>
-          <li><a href="#quickstart" class="nav-link">Run &amp; Deploy</a></li>
+          <li><a href="#quickstart" class="nav-link">Run &amp; Host</a></li>
           <li><a href="#workflow" class="nav-link">Event Workflow</a></li>
           <li><a href="#architecture" class="nav-link">Architecture</a></li>
           <li>
@@ -52,7 +52,7 @@
           <span class="hero-gradient-text">Pickleball Tournaments</span>
         </h1>
         <p class="hero-desc">
-          Engineered for community directors and club organizers. Streamline registration, automated seeded draws, court assignment, and real-time match scoring — with complete offline recovery packs if internet drops.
+          Engineered for community directors and club organizers. Streamline registration, seeded draws, court assignment, and staff-entered match scoring on a live board — with a printable paper recovery pack if the internet drops.
         </p>
         <div class="hero-actions">
           <a href="#quickstart" class="btn-primary" id="hero-quickstart-btn">Get Started Locally</a>
@@ -91,7 +91,7 @@
         <article class="feature-card">
           <div class="feature-icon-wrapper">🎯</div>
           <h3 class="feature-title">Seeded Draws &amp; Round-Robins</h3>
-          <p class="feature-text">Deterministic bracket generation including single elimination, double elimination with optional reset match, and snake-seeded pool play.</p>
+          <p class="feature-text">Deterministic round-robin and seeded single-elimination draws. Double elimination and snake-seeded pools exist as previews and are hidden until release-gated.</p>
         </article>
 
         <article class="feature-card">
@@ -103,7 +103,7 @@
         <article class="feature-card">
           <div class="feature-icon-wrapper">📄</div>
           <h3 class="feature-title">Printable Recovery Pack</h3>
-          <p class="feature-text">One-click export of an event revision pack with match codes and paper scoring grids. If power or Wi-Fi fails, play continues without hesitation.</p>
+          <p class="feature-text">One-click export of an event revision pack with match codes and paper scoring grids. If power or Wi-Fi fails, record results on paper and reconcile them once you are back online.</p>
         </article>
 
         <article class="feature-card">
@@ -115,7 +115,7 @@
         <article class="feature-card">
           <div class="feature-icon-wrapper">🔒</div>
           <h3 class="feature-title">Scoped Scorer Access</h3>
-          <p class="feature-text">Umpires and volunteers receive scoped match PINs. They can only record authorized match scores without accessing event settings or financial data.</p>
+          <p class="feature-text">Scorers are invited by email link and can only open the matches assigned to them, with no access to event settings or financial data.</p>
         </article>
 
         <article class="feature-card">
@@ -130,15 +130,15 @@
     <section class="quickstart-section" id="quickstart">
       <div class="section-header">
         <span class="section-tag">Quickstart</span>
-        <h2 class="section-title">Run or Deploy in Minutes</h2>
-        <p class="section-desc">Choose your environment: run the interactive local demo, serve on your LAN, or host in the cloud.</p>
+        <h2 class="section-title">Run Locally in Minutes</h2>
+        <p class="section-desc">Run the interactive local demo or your own event on your machine. Hosting is documented but not yet verified.</p>
       </div>
 
       <div class="tab-container">
         <div class="tab-header" role="tablist">
           <button class="tab-btn active" data-tab="tab-demo" role="tab" id="tab-btn-demo">🚀 Local Demo</button>
-          <button class="tab-btn" data-tab="tab-serve" role="tab" id="tab-btn-serve">💻 Local Production</button>
-          <button class="tab-btn" data-tab="tab-deploy" role="tab" id="tab-btn-deploy">☁️ Cloud Hosting</button>
+          <button class="tab-btn" data-tab="tab-serve" role="tab" id="tab-btn-serve">💻 Your Own Event</button>
+          <button class="tab-btn" data-tab="tab-deploy" role="tab" id="tab-btn-deploy">☁️ Hosting (unverified)</button>
           <button class="tab-btn" data-tab="tab-backup" role="tab" id="tab-btn-backup">🛡️ Backups &amp; Restores</button>
         </div>
 
@@ -191,7 +191,7 @@
         <!-- Tab 3: Cloud Deploy -->
         <div class="tab-content" id="tab-deploy" role="tabpanel">
           <h3>Cloud Deployment (PaaS / Docker / VPS)</h3>
-          <p>Deploy to Render, Fly.io, Railway, or any Linux server using Gunicorn and PostgreSQL.</p>
+          <p>Hosting has not been verified: PostgreSQL is untested and there is no Docker image. Read OPERATIONS.md before exposing an instance. Behind a TLS proxy the settings below are required.</p>
           <div class="terminal-card">
             <div class="terminal-header">
               <div class="terminal-dots">
@@ -207,6 +207,11 @@ DATABASE_URL=postgresql://user:password@host:5432/tourney
 SECRET_KEY=&lt;generate-random-secret&gt;
 DEBUG=0
 ALLOWED_HOSTS=tourney.yourdomain.org
+SITE_URL=https://tourney.yourdomain.org
+ALLOW_ORGANIZER_SIGNUP=0
+TRUST_PROXY_SSL=1
+TRUST_FORWARDED_FOR=1
+<span class="cmd-comment"># The app does not read .env itself: export these (set -a; . ./.env; set +a)</span>
 
 <span class="cmd-comment"># Run migrations &amp; collect static assets</span>
 python manage.py migrate --noinput
@@ -254,7 +259,7 @@ python manage.py work_outbox</code></pre>
         <div class="step-card">
           <span class="step-number">Step 01</span>
           <h3 class="step-title">Configure Event</h3>
-          <p class="step-desc">Set divisions, capacity limits, court hours, and scoring rules (rally scoring, win-by-2).</p>
+          <p class="step-desc">Set divisions, capacity limits, court hours, and scoring rules (games to 11, 15 or 21, win by two, one game or best of three).</p>
         </div>
 
         <div class="step-card">
@@ -300,7 +305,7 @@ python manage.py work_outbox</code></pre>
   <footer>
     <div class="footer-container">
       <div class="footer-copy">
-        <p>&copy; 2026 Open Pickleball Tourney. Developed for community clubs and local tournaments.</p>
+        <p>Open Pickleball Tourney. Developed for community clubs and local tournaments. No license has been selected yet.</p>
       </div>
       <ul class="footer-links">
         <li><a href="https://github.com/ryan258/open-pickleball-tourney" target="_blank" rel="noopener noreferrer">Source Code</a></li>

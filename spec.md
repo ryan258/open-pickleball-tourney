@@ -788,7 +788,7 @@ The draft is complete enough to review and scope development, but it is not a lo
 | D-10 | Junior and sensitive-data policies | Adult-only R1; guardian/retention contracts specified for later | Must be completed before enabling the affected features |
 | D-11 | Pilot venue/operator | No real event committed | Synthetic rehearsal first; arrange a real pilot separately |
 
-The implementation plan is now in plan.md, progress in roadmap.md, and acceptance evidence in IMPLEMENTATION.md. R2/R3 influence stable data boundaries; incomplete or externally dependent capabilities must not be represented as delivered.
+Progress is in roadmap.md and acceptance evidence in IMPLEMENTATION.md. R2/R3 influence stable data boundaries; incomplete or externally dependent capabilities must not be represented as delivered.
 
 ## 8. Sources and verification limits
 
