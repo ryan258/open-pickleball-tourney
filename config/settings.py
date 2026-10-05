@@ -76,6 +76,11 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 CSRF_TRUSTED_ORIGINS = [SITE_URL]
+# Behind a TLS-terminating proxy, opt in to trusting its headers. Never enable on a directly exposed server.
+if os.environ.get("TRUST_PROXY_SSL", "0") == "1":
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+TRUST_FORWARDED_FOR = os.environ.get("TRUST_FORWARDED_FOR", "0") == "1"  # rate limits use the proxy-supplied client address
+ENABLE_EXPERIMENTAL_FORMATS = os.environ.get("ENABLE_EXPERIMENTAL_FORMATS", "0") == "1"  # pools / double elimination are not release-gated
 DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.filebased.EmailBackend")

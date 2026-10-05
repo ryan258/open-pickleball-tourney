@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.db import transaction
-from django.db.models import Q
+from django.contrib.sessions.models import Session
 from django.utils import timezone
 from .models import Outbox, Event, Token, RateBucket
 from . import services
@@ -25,6 +25,7 @@ def maintenance():
     # Auth link payloads can include private identity data; expired links need no retention.
     Token.objects.filter(expires_at__lt=now-timedelta(days=7)).delete()
     RateBucket.objects.filter(reset_at__lt=now-timedelta(days=1)).delete()
+    Session.objects.filter(expire_date__lt=now).delete()  # previews (roster CSV) hold private data in the session
 
 
 def deliver_one():

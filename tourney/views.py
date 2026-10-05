@@ -1,7 +1,4 @@
-import csv
 import io
-import json
-import uuid
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 import qrcode
@@ -9,19 +6,18 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q, Count, Sum
+from django.db.models import Q
 from django.http import HttpResponse, JsonResponse, Http404
 from django.shortcuts import get_object_or_404, render, redirect
-from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 from . import services
-from .auth import participant_grants, grant_participant, rate_limit
+from .auth import participant_grants, rate_limit
 from .engine import DomainError
 from .forms import EventForm, DivisionForm, RegistrationForm, ScoreForm, local_instant
-from .models import (Organization, Membership, Event, EventGrant, Court, Division, Participant, Entry, EntryMember,
-                     Match, Result, Outbox, Token, Receipt, Package, Audit)
+from .models import (Organization, Membership, Event, Court, Division, Participant, Entry, EntryMember,
+                     Match, Token)
 from .permissions import capabilities, require, role_for, require_match
 
 
@@ -196,6 +192,8 @@ def registration(request, slug):
     if request.method == "POST" and form.is_valid():
         rate_limit(request, "registration", limit=30)
         payload = form.payload()
+        if not assisted:
+            rate_limit(request, "registration_to", limit=5, identity=payload["people"][0]["email"], per_ip=False)
         payload["policy_version"] = request.POST.get("policy_version")
         try:
             if assisted:
@@ -215,12 +213,15 @@ def registration(request, slug):
 
 def my_event(request, slug):
     event, caps = event_access(request, slug, public=False)
+    if event.status == "draft" and not caps:
+        raise Http404("Event not found")  # an unpublished title must not leak through the entry-recovery page
     ids = [pid for pid, grant in participant_grants(request).items() if grant["event"] == str(event.id)]
     people = Participant.objects.filter(event=event, pk__in=ids)
     if not people.exists():
         if request.method == "POST":
             rate_limit(request, "manage_link", limit=10)
             email = request.POST.get("email", "").lower().strip()
+            rate_limit(request, "manage_to", limit=5, identity=email, per_ip=False)
             person = event.participants.filter(email=email).first()
             if person:
                 with transaction.atomic():

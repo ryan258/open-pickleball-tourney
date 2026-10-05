@@ -1,13 +1,11 @@
 from datetime import datetime, timedelta, timezone as dt_timezone
-from decimal import Decimal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from django import forms
+from django.conf import settings
 from django.utils import timezone
-from .models import Event, Division
+from .models import Event, Division, FORMATS
 
-
-class StyledForm(forms.Form):
-    pass
+RELEASED_FORMATS = {"round_robin", "single_elimination"}
 
 
 def local_instant(value, zone, fold=""):
@@ -95,8 +93,17 @@ class DivisionForm(forms.ModelForm):
         help_texts = {"skill_min": "Inclusive minimum; leave blank for all skill levels.", "skill_max": "Exclusive maximum. Highest partner rating is used.",
                       "pool_count": "Used only for pools into playoffs.", "qualifiers": "Advancing entries per pool; pool order breaks cross-pool ties."}
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not settings.ENABLE_EXPERIMENTAL_FORMATS:  # spec: unreleased formats stay disabled; keep an existing division's own format selectable
+            self.fields["format"].choices = [c for c in FORMATS if c[0] in RELEASED_FORMATS or c[0] == self.instance.format]
+            self.fields["format"].help_text = "Pools and double elimination are not release-gated yet (set ENABLE_EXPERIMENTAL_FORMATS=1 to try them)."
+
     def clean(self):
         data = super().clean()
+        # event is not a form field, so Django skips the (event, name) unique constraint; check it here.
+        if data.get("name") and Division.objects.filter(event_id=self.instance.event_id, name=data["name"]).exclude(pk=self.instance.pk).exists():
+            self.add_error("name", "This event already has a division with that name.")
         if data.get("skill_min") is not None and data.get("skill_max") is not None and data["skill_min"] >= data["skill_max"]:
             self.add_error("skill_max", "Maximum skill must exceed the minimum.")
         if data.get("max_age") is not None and data.get("min_age") and data["max_age"] < data["min_age"]:

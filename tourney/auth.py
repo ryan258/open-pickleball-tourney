@@ -9,13 +9,21 @@ from django.db import transaction
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from .models import Event, Token, Outbox, Organization, Membership, EventGrant, RateBucket, Participant, Entry
+from .models import Event, Token, Outbox, EventGrant, RateBucket, Participant, Entry
 from .engine import DomainError
 from .services import issue_token, queue_mail, register, accept_partner
 
 
-def rate_limit(request, label, limit=10, minutes=15, identity=""):
-    key = hashlib.sha256(f"{label}|{request.META.get('REMOTE_ADDR', '')}|{identity}".encode()).hexdigest()
+def client_ip(request):
+    if settings.TRUST_FORWARDED_FOR:
+        forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[-1].strip()  # rightmost: appended by our proxy
+        if forwarded:
+            return forwarded
+    return request.META.get("REMOTE_ADDR", "")
+
+
+def rate_limit(request, label, limit=10, minutes=15, identity="", per_ip=True):
+    key = hashlib.sha256(f"{label}|{client_ip(request) if per_ip else ''}|{identity}".encode()).hexdigest()
     with transaction.atomic():
         bucket, _ = RateBucket.objects.select_for_update().get_or_create(key=key, defaults={"reset_at": timezone.now()+timedelta(minutes=minutes)})
         if bucket.reset_at <= timezone.now():
@@ -33,6 +41,7 @@ def login_view(request):
             validate_email(email)
         except ValidationError:
             return render(request, "login.html", {"error": "Enter a valid email address."})
+        rate_limit(request, "login_to", limit=5, identity=email, per_ip=False)  # one inbox cannot be flooded from many addresses
         exists = get_user_model().objects.filter(email__iexact=email, is_active=True).exists()
         if exists or settings.ALLOW_ORGANIZER_SIGNUP:
             with transaction.atomic():
@@ -70,6 +79,11 @@ def link_view(request, raw):
             raise DomainError("This link is no longer available.", "expired", 410)
         destination = "/dashboard/"
         if token.kind in ("login", "staff"):
+            if token.kind == "staff":  # validate before login(): a DomainError rolls back the new session row
+                if event.status in ("cancelled", "archived"):
+                    raise DomainError("This staff invitation is no longer available.", "expired", 410)
+                if token.payload["role"] not in ("director", "desk", "scorer", "promotion", "finance", "viewer"):
+                    raise DomainError("Invalid staff grant.")
             user = get_user_model().objects.filter(email__iexact=token.email).first()
             if user is None:
                 if token.kind == "login" and not settings.ALLOW_ORGANIZER_SIGNUP:
@@ -80,10 +94,6 @@ def link_view(request, raw):
                 raise DomainError("This account is disabled.", "forbidden", 403)
             login(request, user, backend="django.contrib.auth.backends.ModelBackend")
             if token.kind == "staff":
-                if event.status in ("cancelled", "archived"):
-                    raise DomainError("This staff invitation is no longer available.", "expired", 410)
-                if token.payload["role"] not in ("director", "desk", "scorer", "promotion", "finance", "viewer"):
-                    raise DomainError("Invalid staff grant.")
                 EventGrant.objects.update_or_create(event=token.event, user=user, defaults={"role": token.payload["role"]})
                 destination = f"/events/{token.event.slug}/desk/"
         elif token.kind == "registration":

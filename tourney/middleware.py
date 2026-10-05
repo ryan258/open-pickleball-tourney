@@ -19,7 +19,8 @@ class BoundaryMiddleware:
 
     def process_exception(self, request, exc):
         if isinstance(exc, DomainError):
-            if request.headers.get("Accept") == "application/json":
+            accept = request.headers.get("Accept", "")
+            if "application/json" in accept and "text/html" not in accept:
                 return JsonResponse({"error": exc.code, "message": str(exc)}, status=exc.status)
             return render(request, "error.html", {"message": str(exc), "code": exc.code}, status=exc.status)
         if isinstance(exc, (ValidationError, MultiValueDictKeyError)):

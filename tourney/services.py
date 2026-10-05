@@ -1,7 +1,5 @@
 """All event mutations serialize on the event row (SQLite: BEGIN IMMEDIATE)."""
-import csv
 import hashlib
-import io
 import json
 import secrets
 import uuid
@@ -11,12 +9,12 @@ from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Max, Q, Sum
+from django.db.models import F, Max, Q, Sum
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from .engine import DomainError, round_robin, elimination_graph, snake_pools, validate_games, rank_round_robin
 from .models import (Event, Court, Division, Participant, Entry, EntryMember, Draw, Match, Result,
-                     Audit, Operation, Outbox, Token, Receipt, Package)
+                     Audit, Operation, Outbox, Token, Receipt)
 from .permissions import require, require_match
 
 TERMINAL = {"completed", "bye", "void"}
@@ -107,12 +105,7 @@ def scoped(model, event, pk, relation="event"):
 
 
 def current_matches(event):
-    return Match.objects.filter(division__event=event).filter(draw_version=models_draw_version())
-
-
-def models_draw_version():
-    from django.db.models import F
-    return F("division__draw_version")
+    return Match.objects.filter(division__event=event, draw_version=F("division__draw_version"))
 
 
 def division_matches(division):
@@ -282,6 +275,7 @@ def entry_action(event, actor, data):
         entry.status = "withdrawn"; entry.offer_expires = None
         entry.withdrawal_reason = data.get("reason", "Participant withdrawal")[:300]
         entry.save()
+        notify_entry(entry, "Entry updated", "Your entry has been withdrawn.", "entry_update")  # before members go inactive
         entry.members.update(active=False)
         propagate(entry.division)
         advance_waitlist(entry.division)
@@ -292,7 +286,8 @@ def entry_action(event, actor, data):
         advance_waitlist(entry.division)
     else:
         raise DomainError("Unsupported entry action.")
-    notify_entry(entry, "Entry updated", f"Your entry is now {entry.status}.", "entry_update")
+    if action != "withdraw":
+        notify_entry(entry, "Entry updated", f"Your entry is now {entry.status}.", "entry_update")
     return {"id": str(entry.id), "status": entry.status}
 
 
@@ -302,7 +297,10 @@ def check_in(event, actor, data):
     if not member.active or member.entry.status != "admitted" or not member.accepted_at:
         raise DomainError("Admission and participation acceptance must be complete before check-in.")
     eligible(member.participant, member.division)
-    member.checked_in = bool(data.get("checked_in", True))
+    want = bool(data.get("checked_in", True))
+    if not want and division_matches(member.division).filter(Q(side_a=member.entry) | Q(side_b=member.entry), status__in=ACTIVE).exists():
+        raise DomainError("Resolve this entry's active match before undoing check-in.")
+    member.checked_in = want
     member.checked_in_at = timezone.now() if member.checked_in else None
     member.save()
     return {"id": str(member.id), "status": "checked_in" if member.checked_in else "expected"}
@@ -519,12 +517,25 @@ def qualify_pools(event, actor, data):
     return {"id": str(division.id), "count": len(qualifiers)}
 
 
-def people_ids(match):
+def schedule_facts(event):
+    """One query each for who plays in which entry and per-person rest/availability, so interval checks stay in memory."""
+    entries = {}
+    for entry_id, person_id in EntryMember.objects.filter(division__event=event, active=True).values_list("entry_id", "participant_id"):
+        entries.setdefault(entry_id, set()).add(person_id)
+    return {"entries": entries, "people": {p.id: p for p in event.participants.all()}}
+
+
+def people_ids(match, facts=None):
+    if facts is not None:
+        return facts["entries"].get(match.side_a_id, set()) | facts["entries"].get(match.side_b_id, set())
     return set(EntryMember.objects.filter(entry_id__in=[match.side_a_id, match.side_b_id], active=True).values_list("participant_id", flat=True))
 
 
-def rest_for(event, people):
-    extra = Participant.objects.filter(id__in=people).aggregate(n=Max("extra_rest_minutes"))["n"] or 0
+def rest_for(event, people, facts=None):
+    if facts is not None:
+        extra = max((facts["people"][p].extra_rest_minutes for p in people if p in facts["people"]), default=0)
+    else:
+        extra = Participant.objects.filter(id__in=people).aggregate(n=Max("extra_rest_minutes"))["n"] or 0
     return timedelta(minutes=event.rest_minutes+extra)
 
 
@@ -548,14 +559,14 @@ def reservations(event, matches):
     return output
 
 
-def interval_check(event, match, court, start, end, scheduled, ignore_id=None):
+def interval_check(event, match, court, start, end, scheduled, ignore_id=None, facts=None):
     if court.event_id != event.id or court.status != "available":
         raise DomainError("This court is blocked or closed.")
     if start < court.opens_at or end > court.closes_at or start < event.start_at or end > event.end_at:
         raise DomainError("The match falls outside event or court availability.")
-    people = people_ids(match)
-    rest = rest_for(event, people)
-    for person in Participant.objects.filter(pk__in=people):
+    people = people_ids(match, facts)
+    rest = rest_for(event, people, facts)
+    for person in (Participant.objects.filter(pk__in=people) if facts is None else [facts["people"][p] for p in people if p in facts["people"]]):
         for interval in person.unavailable:
             left, right = parse_datetime(interval["start"]), parse_datetime(interval["end"])
             if left < end and right > start:
@@ -565,9 +576,9 @@ def interval_check(event, match, court, start, end, scheduled, ignore_id=None):
             continue
         if court.id == other_court.id and start < other_end+timedelta(minutes=event.buffer_minutes) and end+timedelta(minutes=event.buffer_minutes) > other_start:
             raise DomainError("Another match occupies this court or its turnaround buffer.")
-        shared = people & people_ids(other)
+        shared = people & people_ids(other, facts)
         if shared:
-            shared_rest = rest_for(event, shared)
+            shared_rest = rest_for(event, shared, facts)
             if start < other_end+shared_rest and end+shared_rest > other_start:
                 raise DomainError("A player is already scheduled or needs more rest.")
 
@@ -576,7 +587,9 @@ def schedule_proposal(event, start):
     matches = list(current_matches(event).select_related("division", "court", "side_a", "side_b").order_by("division__created_at", "number"))
     courts = list(event.courts.filter(status="available"))
     scheduled = reservations(event, [m for m in matches if m.pinned or m.status in ACTIVE or m.ended_at])
+    facts = schedule_facts(event)
     proposal, unscheduled = [], []
+    # ponytail: first-fit rescans from the event start per match; fine for the 24-match demo, needs a per-court free-time cursor for a full 8-division event.
     for match in matches:
         if match.status not in ("ready",) or match.pinned:
             continue
@@ -587,7 +600,7 @@ def schedule_proposal(event, start):
             end = cursor+timedelta(minutes=event.duration_minutes)
             for court in courts:
                 try:
-                    interval_check(event, match, court, cursor, end, scheduled)
+                    interval_check(event, match, court, cursor, end, scheduled, facts=facts)
                 except DomainError as exc:
                     last_error = str(exc); continue
                 scheduled.append((match, court, cursor, end))
@@ -606,6 +619,7 @@ def commit_schedule(event, actor, data):
     if len(set(ids)) != len(ids):
         raise DomainError("A schedule cannot assign a match twice.")
     scheduled = reservations(event, current_matches(event).exclude(pk__in=ids).select_related("court"))
+    facts = schedule_facts(event)
     for item in assignments:
         match = scoped(Match, event, item["match"], "division__event")
         ensure_revision(match, item)
@@ -615,7 +629,7 @@ def commit_schedule(event, actor, data):
         start, end = parse_datetime(item["start"]), parse_datetime(item["end"])
         if not start or not end or not timezone.is_aware(start) or not timezone.is_aware(end) or end <= start:
             raise DomainError("Choose a valid, time-zone-aware interval.")
-        interval_check(event, match, court, start, end, scheduled)
+        interval_check(event, match, court, start, end, scheduled, facts=facts)
         match.court = court; match.scheduled_at = start; match.scheduled_end = end
         match.pinned = bool(item.get("pinned", False)); match.revision += 1; match.save()
         scheduled.append((match, court, start, end))

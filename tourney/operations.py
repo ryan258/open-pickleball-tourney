@@ -1,6 +1,5 @@
 """Bounded desk operations using the same event transaction/revision protocol."""
 from datetime import timedelta, date
-from django.contrib.auth import get_user_model
 from django.core.validators import validate_email
 from django.db.models import Max
 from django.utils import timezone
@@ -62,8 +61,12 @@ def court_update(event, actor, data):
         raise DomainError("Choose a supported court state.")
     court.status = data["status"]; court.notes = data.get("notes", "")[:300]; court.save()
     if court.status != "available":
-        for match in current_matches(event).filter(court=court, status__in=["called", "in_progress"]):
-            match.status = "ready" if match.status == "called" else "suspended"
+        for match in current_matches(event).filter(court=court, status__in=["called", "in_progress", "ready"]):
+            if match.status == "in_progress":
+                match.status = "suspended"
+            else:  # called or merely planned: free the court and clear the plan so it is re-proposed
+                match.status = "ready"; match.court = None; match.pinned = False
+                match.scheduled_at = None; match.scheduled_end = None
             match.called_at = None; match.revision += 1; match.save()
     return {"id": str(court.id), "status": court.status}
 

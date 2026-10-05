@@ -7,15 +7,15 @@ from zoneinfo import ZoneInfo
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import transaction, IntegrityError
+from django.db import IntegrityError
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from . import operations, services, portability
 from .engine import DomainError
 from .forms import ParticipantForm, EntryEditForm, RegistrationForm, local_instant
-from .models import Participant, Entry, Match, Package, Event
-from .permissions import require
+from .models import Participant, Entry, Package
+from .permissions import require, require_owner
 from .views import event_access
 
 
@@ -125,7 +125,7 @@ class UploadForm(forms.Form):
 
 @login_required
 def archive_import(request, slug):
-    event, _ = event_access(request, slug, public=False); require(request.user, event, "edit")
+    event, _ = event_access(request, slug, public=False); require_owner(request.user, event)  # creates an event in the whole organization
     form = UploadForm(request.POST or None, request.FILES or None)
     if request.method == "POST" and form.is_valid():
         if not request.POST.get("confirm"):

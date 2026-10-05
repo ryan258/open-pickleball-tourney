@@ -29,8 +29,12 @@ def require(user, event, capability):
         raise DomainError("You do not have access to this action.", "forbidden", 403)
 
 
-
 def require_match(user, event, match):
     require(user, event, "score")
     if role_for(user, event) == "scorer" and match.assigned_scorer_id != user.pk:
         raise DomainError("This match is not assigned to you.", "forbidden", 403)
+
+
+def require_owner(user, event):
+    if role_for(user, event) != "owner":
+        raise DomainError("Only the organization owner can do this.", "forbidden", 403)
