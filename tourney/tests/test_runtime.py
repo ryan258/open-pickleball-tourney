@@ -355,3 +355,80 @@ class RuntimeTests(TestCase):
         event=Event.objects.get(title="Created in test"); self.assertEqual(event.courts.count(),2)
         response=self.client.post(reverse("event_edit",args=[event.slug]),{**data,"revision":"invalid"})
         self.assertEqual(response.status_code,400)
+
+    def test_duplicate_division_name_is_a_form_error_not_a_500(self):
+        self.event.refresh_from_db()
+        data={"name":"Singles","discipline":"singles","format":"round_robin","capacity":4,"target":11,"best_of":1,"min_age":18,"pool_count":2,"qualifiers":2,"waitlist_enabled":"on","revision":self.event.revision}
+        response=self.client.post(reverse("division_new",args=[self.event.slug]),data)
+        self.assertEqual(response.status_code,200); self.assertContains(response,"already has a division")
+        self.assertEqual(self.event.divisions.filter(name="Singles").count(),1)
+
+    def test_unreleased_formats_hidden_unless_enabled(self):
+        from tourney.forms import DivisionForm
+        offered=lambda: {value for value,_ in DivisionForm(instance=Division(event=self.event)).fields["format"].choices}
+        self.assertEqual(offered(),{"round_robin","single_elimination"})
+        with override_settings(ENABLE_EXPERIMENTAL_FORMATS=True): self.assertEqual(len(offered()),4)
+
+    def test_withdrawal_notifies_the_withdrawn_player(self):
+        entry=self.division.entries.get(label="Entry 0")
+        s.entry_action(self.event.id,self.owner,{"entry":str(entry.id),"action":"withdraw"})
+        self.assertTrue(Outbox.objects.filter(recipient="player0@example.invalid",subject="Entry updated").exists())
+
+    def test_staff_link_for_closed_event_is_a_clear_410_and_does_not_sign_in(self):
+        Event.objects.filter(pk=self.event.pk).update(status="cancelled")
+        raw,token=s.issue_token("staff","late-staff@example.invalid",Event.objects.get(pk=self.event.pk),{"role":"desk"})
+        self.client.logout()
+        response=self.client.post(f"/link/{raw}/")
+        self.assertEqual(response.status_code,410); self.assertNotIn("_auth_user_id",self.client.session)
+        token.refresh_from_db(); self.assertIsNone(token.used_at)
+
+    def test_draft_event_title_not_disclosed_by_entry_page(self):
+        self.event.status="draft"; self.event.title="Unpublished title"; self.event.save()
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse("my_event",args=[self.event.slug])).status_code,404)
+
+    def test_forwarded_client_address_is_trusted_only_when_configured(self):
+        def codes(n=12):
+            return [Client(HTTP_X_FORWARDED_FOR=f"203.0.113.{i}",REMOTE_ADDR="10.0.0.1").post("/login/",{"email":f"user{i}@example.invalid"}).status_code for i in range(n)]
+        self.assertIn(429,codes())
+        RateBucket.objects.all().delete()
+        with override_settings(TRUST_FORWARDED_FOR=True): self.assertNotIn(429,codes())
+
+    def test_login_email_is_throttled_per_recipient_across_addresses(self):
+        with override_settings(TRUST_FORWARDED_FOR=True):
+            codes=[Client(HTTP_X_FORWARDED_FOR=f"203.0.113.{i}",REMOTE_ADDR="10.0.0.1").post("/login/",{"email":"victim@example.invalid"}).status_code for i in range(7)]
+        self.assertEqual(codes.count(200),5); self.assertEqual(codes.count(429),2)
+
+    def test_archive_import_is_owner_only(self):
+        director=get_user_model().objects.create_user("director",email="director@example.invalid")
+        EventGrant.objects.create(event=self.event,user=director,role="director")
+        self.client.force_login(director)
+        self.assertEqual(self.client.get(reverse("archive_import",args=[self.event.slug])).status_code,403)
+
+    def test_schedule_preview_does_not_query_per_candidate(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        self.draw(); self.event.refresh_from_db()
+        with CaptureQueriesContext(connection) as queries: proposal=s.schedule_proposal(self.event,timezone.now())
+        self.assertEqual(len(proposal["assignments"]),6); self.assertLess(len(queries),30)
+
+    def test_blocking_a_court_clears_planned_ready_matches(self):
+        match=self.draw(); at=timezone.now()+timedelta(hours=1)
+        Match.objects.filter(pk=match.pk).update(court=self.court,scheduled_at=at,scheduled_end=at+timedelta(minutes=25),pinned=True)
+        ops.court_update(self.event.id,self.owner,{"court":str(self.court.id),"status":"blocked"})
+        match.refresh_from_db(); self.assertIsNone(match.court_id); self.assertIsNone(match.scheduled_at); self.assertFalse(match.pinned)
+
+    def test_check_in_cannot_be_undone_during_active_match(self):
+        match=self.draw(); self.ready_players()
+        s.match_action(self.event.id,self.owner,{"match":str(match.id),"revision":match.revision,"action":"start","court":str(self.court.id)})
+        member=EntryMember.objects.get(entry=match.side_a,active=True)
+        with self.assertRaises(DomainError): s.check_in(self.event.id,self.owner,{"member":str(member.id),"checked_in":False})
+
+    def test_json_error_for_multi_type_accept_header(self):
+        response=self.client.post(reverse("entry_command",args=[self.event.slug]),{"action":"nope","entry":str(self.division.entries.first().id)},HTTP_ACCEPT="application/json, text/plain")
+        self.assertEqual(response["Content-Type"],"application/json")
+
+    def test_maintenance_prunes_expired_sessions(self):
+        from django.contrib.sessions.models import Session
+        Session.objects.create(session_key="expired",session_data="x",expire_date=timezone.now()-timedelta(days=1))
+        maintenance(); self.assertFalse(Session.objects.filter(session_key="expired").exists())
