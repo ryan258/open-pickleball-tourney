@@ -10,10 +10,10 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      TOURNEY_DATA_DIR: ${{ runner.temp }}/tourney-data
     steps:
       - uses: actions/checkout@v4
+      # The runner context is not available in job-level env, so set it for later steps here.
+      - run: echo "TOURNEY_DATA_DIR=$RUNNER_TEMP/tourney-data" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
