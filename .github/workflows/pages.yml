@@ -1,12 +1,12 @@
-name: Deploy Documentation to GitHub Pages
+name: Publish browser edition to GitHub Pages
 
+# A repository serves one Pages site. This publishes the Hugo browser edition in site/.
+# It runs only after Pages is enabled (Settings → Pages → Source: GitHub Actions) and
+# a change under site/ reaches main, or someone starts it by hand (Actions → Run workflow).
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
-      - '.github/workflows/pages.yml'
+    branches: [main]
+    paths: ['site/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:
@@ -15,7 +15,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: 'pages'
+  group: pages
   cancel-in-progress: false
 
 jobs:
@@ -25,17 +25,31 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          path: 'docs/'
-
-      - name: Deploy to GitHub Pages
-        id: deployment
+          node-version: '22'
+      # Nothing is published unless the rules tests pass.
+      - run: node --test site/tests/browser-rules.test.mjs
+      - name: Install Hugo
+        run: |
+          curl -fsSL https://github.com/gohugoio/hugo/releases/download/v0.166.0/hugo_0.166.0_linux-amd64.tar.gz | tar -xz -C "$RUNNER_TEMP" hugo
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Build for the real address
+        run: hugo --source site --cacheDir "$RUNNER_TEMP/hugo-cache" --destination "$PWD/site/public" --baseURL "${{ steps.pages.outputs.base_url }}/" --panicOnWarning
+      - name: Build the offline copy and add it to the site as a zip
+        run: |
+          hugo --source site --cacheDir "$RUNNER_TEMP/hugo-cache" --destination "$RUNNER_TEMP/portable/open-pickleball-tourney" --baseURL=/ --environment=portable --panicOnWarning
+          # An offline copy must not point at the site root or any worker.
+          if grep -Eq '(href|src)="/' "$RUNNER_TEMP/portable/open-pickleball-tourney/index.html"; then echo 'Offline copy has a root-relative link'; exit 1; fi
+          if grep -q 'data-worker' "$RUNNER_TEMP/portable/open-pickleball-tourney/index.html"; then echo 'Offline copy registers a worker'; exit 1; fi
+          cp site/portable/README-FIRST.txt "$RUNNER_TEMP/portable/open-pickleball-tourney/"
+          mkdir -p site/public/download
+          (cd "$RUNNER_TEMP/portable" && zip -qr "$GITHUB_WORKSPACE/site/public/download/open-pickleball-tourney.zip" open-pickleball-tourney)
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/public
+      - id: deployment
         uses: actions/deploy-pages@v4

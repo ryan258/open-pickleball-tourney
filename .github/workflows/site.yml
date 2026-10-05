@@ -1,0 +1,32 @@
+name: Site
+
+# Checks only. Nothing here deploys or publishes the browser edition.
+on:
+  push:
+    paths: ['site/**', '.github/workflows/site.yml']
+  pull_request:
+    paths: ['site/**', '.github/workflows/site.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test site/tests/browser-rules.test.mjs
+      # Standard (non-extended) Hugo: this also proves site/README.md's claim that it suffices.
+      - name: Install Hugo
+        run: |
+          curl -fsSL https://github.com/gohugoio/hugo/releases/download/v0.166.0/hugo_0.166.0_linux-amd64.tar.gz | tar -xz -C "$RUNNER_TEMP" hugo
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - run: hugo --source site --cacheDir "$RUNNER_TEMP/hugo-cache" --destination "$RUNNER_TEMP/public" --panicOnWarning
+      - name: Offline copy builds with relative links and no worker
+        run: |
+          hugo --source site --cacheDir "$RUNNER_TEMP/hugo-cache" --destination "$RUNNER_TEMP/portable" --baseURL=/ --environment=portable --panicOnWarning
+          if grep -Eq '(href|src)="/' "$RUNNER_TEMP/portable/index.html"; then echo 'Offline copy has a root-relative link'; exit 1; fi
+          if grep -q 'data-worker' "$RUNNER_TEMP/portable/index.html"; then echo 'Offline copy registers a worker'; exit 1; fi
