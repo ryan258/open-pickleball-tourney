@@ -1,0 +1,17 @@
+baseURL = 'http://localhost:1313/'
+locale = 'en-US'
+title = 'Open Pickleball Tourney'
+disableKinds = ['taxonomy', 'term', 'RSS', 'sitemap']
+enableRobotsTXT = true
+
+[outputs]
+home = ['HTML', 'ServiceWorker']
+
+[outputFormats.ServiceWorker]
+mediaType = 'text/javascript'
+baseName = 'sw'
+isPlainText = true
+notAlternative = true
+
+[params]
+edition = '1'

@@ -1,0 +1,2 @@
+# Offline copy: links relative to each page so it works from a double-click or any folder.
+relativeURLs = true
