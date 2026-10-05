@@ -1,11 +1,10 @@
-# Documentation & GitHub Pages Portal
+# Documentation & Architecture Showcase
 
-This directory contains the static documentation site, user guides, and architecture showcase published via **GitHub Pages**.
+This directory contains the static documentation site, user guides, and architecture showcase for the Django edition.
 
-## Live Documentation Site
+## Status
 
-- **URL**: `https://ryan258.github.io/open-pickleball-tourney/`
-- **Source**: `docs/` on `main` branch (deployed via [`.github/workflows/pages.yml`](../.github/workflows/pages.yml); GitHub Pages must be enabled in repository settings first).
+- **Not published.** `https://ryan258.github.io/open-pickleball-tourney/` is the intended address of the browser edition (built from `site/`; see [`.github/workflows/pages.yml`](../.github/workflows/pages.yml)). This `docs/` showcase has no deploy workflow; give it its own subpath or repository before publishing it.
 
 ## Directory Structure
 
@@ -17,6 +16,6 @@ This directory contains the static documentation site, user guides, and architec
 
 ## Architecture & Hosting Boundary
 
-Open Pickleball Tourney is a full-stack Python 3.13 / Django 5.2 LTS web application requiring a dynamic runtime (WSGI/Gunicorn, SQLite/PostgreSQL, background mail outbox worker). 
+The Django edition of Open Pickleball Tourney is a full-stack Python 3.13 / Django 5.2 LTS web application requiring a dynamic runtime (WSGI/Gunicorn, SQLite/PostgreSQL, background mail outbox worker). 
 
-GitHub Pages hosts the public-facing documentation, quickstart guides, and deployment instructions statically, while live tournament operations are run either locally via `./tour` / `./tour serve` or hosted on an application platform (e.g. Render, Fly.io, Railway, or VPS).
+GitHub Pages is prepared to host the standalone browser edition (from `site/`), not this `docs/` showcase. Live tournament operations for the Django edition are run either locally via `./tour` / `./tour serve` or hosted on an application platform (e.g. Render, Fly.io, Railway, or VPS).

@@ -1,5 +1,49 @@
 # Implementation and acceptance evidence
 
+## Browser edition — October 5, 2026
+
+The active single-organizer direction is implemented separately in `site/`.
+The local Hugo build and targeted Node checks pass. Browser checks exercised
+creation, a five-team/ten-match event, score validation/review/correction,
+standings, backup download and restoration, malformed backup rejection,
+second-tab overwrite rejection, and storage-full recovery. All four organizer
+screens measured 320 CSS pixels wide at a 320-pixel viewport. A static build
+reopened its saved event with a controlled offline network (an uncached probe
+failed). These are synthetic local checks in one Chromium browser, not an
+attended event, assistive-technology certification or cross-browser acceptance.
+
+The nine targeted rules/storage cases cover pair uniqueness, no double
+booking and minimum group counts for 2–16 entries on 1–8 courts; match IDs
+stable across court counts; marked-walkover withdrawals and their validation; completed/deuce scores; tied standings
+and corrections; malformed/foreign/oversized backups; failed persistence and
+stale writers; and two simulated simultaneous writers through a lock. The
+browser separately demonstrated actual stale-tab rejection with two open tabs.
+No Django suite was run for this separate static implementation.
+
+Later October 5 changes (court packing across rounds, mid-event court changes,
+marked-walkover withdrawal/reinstatement, score-correction scroll/focus) have
+the new rules cases above. The owner ran `node --test site/tests/browser-rules.test.mjs`
+after the readability pass below: 9 of 9 passed (October 5, 2026, Node 22). A single manual pass in the in-app browser on a scratch build
+exercised practice event, one score, withdrawal, unranked listing, reinstatement,
+backup storage of the withdrawal, and a 2→1 court change with the score kept.
+A later readability pass (larger small-print, "round" instead of "group", "copy" instead of "backup", plainer walkover and standings wording, "and"/"&"/"/" roster paste, aligned footer/step bar at 900–1194 px, save-status colour) was checked by measurement and screenshots in the in-app browser; the Node tests were run afterwards by the owner (9 of 9 passed), but the browser smoke script was **not** re-run after the wording changes.
+
+An offline copy build (`--environment=portable`) was loaded over `http://localhost` from a
+scratch folder and saved a practice event; opening it by double-click (`file://`) is
+**unverified** and the Pages/zip workflow has never run.
+
+That pass is now preserved as `site/tests/browser-smoke.js` (13 checks, all passing
+when last pasted into the in-app browser on a scratch build). The earlier browser
+evidence above predates these changes. `.github/workflows/site.yml` runs the Node
+tests and a Hugo build in CI; it has not yet run on GitHub.
+
+No publication, hosting change, external provider call, account system, shared
+score editing or Django-data migration was performed. The original application
+and its limitations below remain distinct. See `site/README.md` for current
+operating boundaries and recovery behavior.
+
+---
+
 **October 4, 2026 · America/Chicago.** The local application is runnable. The entire target specification and its R1/R2/R3 release gates are **not complete**. This file separates code from the evidence actually obtained.
 
 ## Delivered local workflow

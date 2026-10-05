@@ -1,6 +1,44 @@
 # Open Pickleball Tourney
 
-A local Django application for adult community pickleball: registration, check-in, draws, court scheduling, scores, results, and portable event records. Implementation is in progress. **The local demo runs; the R1 release gate is not complete.** See [IMPLEMENTATION.md](IMPLEMENTATION.md) for evidence and limits, [roadmap.md](roadmap.md) for the next work, and the static documentation showcase in [`docs/`](docs/) (not yet published; see the last section).
+**The new direction is a simple browser tournament desk for one organizer on one
+computer or tablet.** The Hugo site in [`site/`](site/) handles event setup,
+fixed singles/doubles entries, a round-robin schedule, reviewed scores, standings,
+printing, browser-local saving, and downloadable backup/restore. There are no
+accounts or remote data services. It supports 2–16 entries on 1–8 courts.
+
+For a local development preview:
+
+```sh
+./play
+```
+
+Open [localhost:1313](http://localhost:1313/). **Try a practice tournament** is a
+ready-to-play example; **Start a tournament** begins your own event. `./play`
+is a maintainer command using the installed Hugo. Once the site is hosted,
+organizers will only need its address and a browser. The intended home is a
+GitHub Pages micro site, updated by pushing changes to `main` (see
+`.github/workflows/pages.yml`), with a downloadable offline copy for organizers
+who prefer a double-click or a screen/board computer. **This work is local; Pages is not enabled and
+the browser edition has not been published.**
+
+Tournament records stay in the same browser and website address. Download a copy
+before clearing browser data, changing addresses/devices, or starting a new
+event. Browser backups are separate from Django archives. A production static
+build can reopen offline after its footer confirms that caching succeeded;
+the Hugo development preview does not install the offline worker.
+
+See [`site/README.md`](site/README.md) for the bounded workflow, local build,
+targeted checks, and recovery behavior. [IMPLEMENTATION.md](IMPLEMENTATION.md)
+records evidence and limits; [roadmap.md](roadmap.md) records the active direction.
+
+## Existing Django edition
+
+The earlier local Django application remains available for its broader adult
+community-event workflow: registration, check-in, draws, scheduling, scores,
+and portable event records. Its R1/R2/R3 release gates remain incomplete.
+The instructions below apply to that edition. The `docs/` showcase still
+describes that earlier edition; the Pages workflow now serves the browser
+edition instead, so `docs/` is not published anywhere.
 
 ## Start the local demo
 
@@ -70,6 +108,6 @@ Real concurrent PostgreSQL clients, provider delivery, load testing, browser/dev
 
 ## Documentation & online showcase
 
-A static documentation portal lives in [`docs/`](docs/) with a deploy workflow at [`.github/workflows/pages.yml`](.github/workflows/pages.yml). **It is not published yet:** GitHub Pages must first be enabled for the repository (Settings → Pages → Source: GitHub Actions); until then the workflow fails. Pages hosts only static documentation; the tournament application itself runs locally.
+A static documentation portal for the Django edition lives in [`docs/`](docs/). It is **not published and has no deploy workflow**: a repository serves one Pages site, and [`.github/workflows/pages.yml`](.github/workflows/pages.yml) is now prepared to publish the browser edition from `site/` (after Pages is enabled under Settings → Pages → Source: GitHub Actions). The Django application itself runs locally.
 
 See [OPERATIONS.md](OPERATIONS.md) for backups, restores, uncertain delivery, and hosting boundaries. No license has been selected; this project does not yet claim an open-source release or sanctioned-event approval.

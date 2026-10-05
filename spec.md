@@ -1,6 +1,51 @@
 # Feature: Open Pickleball Tourney
 
-**Status:** Target product specification, draft 0.1; implementation in progress.  
+## October 5 direction: one organizer, one device
+
+Ryan selected a Hugo static site for an organizer using one computer or tablet.
+This is the active implementation direction. The broader Django specification
+below remains historical/advanced scope, not the acceptance contract for this
+smaller browser edition. Existing Django code and records remain available.
+
+The browser edition lives in `site/`. Its bounded first workflow is one casual
+adult event, 2–16 fixed singles players or doubles teams, 1–8 courts, and one
+round robin. Setup → teams → play → results must work without accounts, a
+database server, email, or a command line for the eventual hosted-site user.
+Hugo is a maintainer build tool. The intended host is a GitHub Pages micro site
+updated from `main`; publishing remains Ryan's action.
+
+- Large labeled controls, visible focus, touch/keyboard operation, minimal
+  typing, bulk roster entry, practice data, and printable schedules/results.
+- One game per match, target 11/15/21 and win by two. Courts are assigned in
+  successive groups; the next group waits for the current group to finish.
+  These are organizer-selected casual rules, not sanctioned-event claims.
+- Every pair meets once; nobody plays twice in a group; an odd roster gets
+  byes. Idle courts are filled from later rounds. No estimated times or promise
+  of a minimum rest interval. Court count may change mid-event without losing
+  saved scores.
+- Withdrawal keeps played games; each remaining game is a marked walkover
+  (opponent wins, no points recorded). Withdrawn entries are listed last and
+  unranked, and can be reinstated.
+- Review named sides and winner before saving a valid score. Corrections and
+  clearing a score update derived standings. Ties use wins then differential
+  then points scored, with genuine remaining ties sharing a place.
+- Browser-local saving with honest failure feedback, stale-tab protection,
+  versioned downloadable backups, validated restoration, and explicit review
+  before replacing the active event. Imported schedules/standings are rebuilt
+  from validated inputs; imported HTML is never executed.
+- Printable blank score sheets and results; reusable event settings/roster.
+  Starting again never silently deletes the current tournament.
+- Offline reopening requires a successfully cached static build at the same
+  address. Local data belongs to that browser/address; backup files are the
+  portable recovery path, not automatic cross-device synchronization.
+- Online registration, multiple writers, payments, email, ratings, sanctioned
+  formats and importing Django archives are outside this edition.
+
+Verification is targeted to scheduling, scoring/ranking, backup boundaries,
+storage recovery and the browser workflow. Human event-day and assistive-tech
+acceptance remain separate from automated checks.
+
+**Status (Django edition):** Target product specification, draft 0.1; implementation in progress (historical/advanced scope relative to the active October 5 browser edition above).  
 **Owner:** Ryan Johnson.  
 **Prepared:** October 3, 2026, America/Chicago.  
 **Workspace baseline:** Empty directory; no application, selected stack, or Git repository existed when this specification was drafted.  

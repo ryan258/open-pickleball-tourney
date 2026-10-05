@@ -1,5 +1,28 @@
 # Open Pickleball Tourney — roadmap and restart handoff
 
+## Active direction — October 5: one organizer, one device
+
+Ryan selected the static Hugo browser edition. The implementation is in `site/`;
+`./play` starts its local development preview. Use `site/README.md` for its scope,
+verification, recovery, and build commands. The October 5 section of `spec.md`
+is its acceptance contract. The Django roadmap below is retained for that
+separate edition, rather than silently imposed on this smaller workflow.
+
+Implemented: guided setup and roster, bulk entry, round-robin court groups
+(packed across rounds), mid-event court changes, marked-walkover withdrawal,
+score review/correction, derived standings, printable schedule/results,
+browser-local storage, stale-tab rejection, versioned backup/restore, practice
+event and reuse, and static-build offline caching.
+
+Next: Ryan's review of the local UI with a realistic event; real tablet,
+keyboard/voice/screen-reader and physical print checks; choose a stable public
+address and enable Pages when ready (`pages.yml` is prepared but has never run; a project
+site's address is `https://ryan258.github.io/open-pickleball-tourney/`). No hosting changes,
+remote services, accounts, payments, or shared writers were added. The broader
+Django release gates below are still incomplete and are not browser acceptance.
+
+---
+
 **Status: Local application runnable; R1 implementation and release evidence incomplete**  
 **Updated: October 4, 2026, America/Chicago**  
 **Workspace: `<repository root>`**
