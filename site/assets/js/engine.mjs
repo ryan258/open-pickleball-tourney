@@ -1,4 +1,6 @@
 // Pure browser-edition rules. No Django imports, network, clock, or storage.
+import { formatType, playoffFormat, normalizeCompetition, buildCompetition, sideSignature, present } from './competition.mjs';
+export { FORMAT_OPTIONS, formatType, socialFormat, playoffFormat, formatLabel, sideName, formatStandings, formatSummary, poolsFor } from './competition.mjs';
 export const FORMAT = 'open-pickleball-browser';
 export const VERSION = 1;
 export const MAX_TEAMS = 16;
@@ -102,25 +104,125 @@ export function validateTournament(input) {
   const withdrawn = input.withdrawn ?? [];
   if (!Array.isArray(withdrawn) || new Set(withdrawn).size !== withdrawn.length || withdrawn.some(key => !ids.has(key)) || (withdrawn.length && !input.scheduled)) fail('The withdrawn entries are invalid.');
   tournament.withdrawn = [...withdrawn];
+  if (input.competition !== undefined) tournament.competition = normalizeCompetition(input.competition, tournament);
+  const extended = formatType(tournament) !== 'round_robin';
+  if (extended) {
+    if (!record(input.scoreSides ?? {}) || !record(input.advancement ?? {})) fail('The saved pairings or playoff selection are invalid.');
+    tournament.scoreSides = {};
+    tournament.advancement = {};
+    const qualifyingWithdrawn = input.qualifyingWithdrawn ?? [];
+    if (!Array.isArray(qualifyingWithdrawn) || new Set(qualifyingWithdrawn).size !== qualifyingWithdrawn.length || qualifyingWithdrawn.some(key => !ids.has(key))) fail('The qualification withdrawal record is invalid.');
+    tournament.qualifyingWithdrawn = [...qualifyingWithdrawn];
+    for (const [key, value] of Object.entries(input.scoreSides ?? {})) {
+      if (!/^(?:e-|all-|pool-|mix|kq)/.test(key) || typeof value !== 'string' || value.length > 600) fail('A saved pairing is invalid.');
+      tournament.scoreSides[key] = value;
+    }
+    for (const [key, order] of Object.entries(input.advancement ?? {})) {
+      if (!['all', 'pool-1', 'pool-2', 'pool-3', 'pool-4'].includes(key) || !Array.isArray(order) || order.length > MAX_TEAMS || order.some(key => !ids.has(key))) fail('The playoff order is invalid.');
+      tournament.advancement[key] = [...order];
+    }
+    if (!playoffFormat(tournament) && Object.keys(tournament.advancement).length) fail('This format does not have a pool qualification step.');
+    if (!tournament.scheduled && Object.keys(tournament.advancement).length) fail('Playoff selection needs a completed preliminary stage.');
+    if (!Object.keys(tournament.advancement).length && tournament.qualifyingWithdrawn.length) fail('Qualification withdrawals need a confirmed playoff order.');
+  }
+  if (input.windows !== undefined) {
+    if (formatType(tournament) !== 'rotating_partners' || !record(input.windows)) fail('Arrival and departure rounds apply only to rotating partners.');
+    const rounds = tournament.competition.rounds, windows = {};
+    for (const [person, w] of Object.entries(input.windows)) {
+      if (!ids.has(person) || !Array.isArray(w) || w.length !== 2) fail('A saved arrival or departure is invalid.');
+      const from = integer(w[0], 1, rounds, 'First round');
+      windows[person] = [from, w[1] === null ? null : integer(w[1], from, rounds, 'Last round')];
+    }
+    if (Object.keys(windows).length) {
+      tournament.windows = windows;
+      for (let round = 1; tournament.scheduled && round <= rounds; round++) {
+        if (tournament.teams.filter(team => present(tournament, team.id, round)).length < 4) fail(`Rotating partners needs at least four people in round ${round}.`);
+      }
+    }
+  }
   if (!record(input.scores)) fail('The scores are invalid.');
-  const matches = input.scheduled ? makeSchedule(tournament.teams, tournament.courts) : [];
-  const known = new Set(matches.map(match => match.id));
+  if (Object.keys(input.scores).length > 256) fail('There are too many scores in this record.');
   for (const [key, score] of Object.entries(input.scores)) {
-    if (!known.has(key) || !Array.isArray(score) || score.length !== 2) fail('A score does not belong to this schedule.');
+    if (!/^[a-zA-Z0-9_-]{1,64}$/.test(key) || ['__proto__', 'constructor', 'prototype'].includes(key) || !Array.isArray(score) || score.length !== 2) fail('A score does not belong to this schedule.');
     tournament.scores[key] = validateScore(score[0], score[1], tournament.target);
   }
+  const state = competitionState(tournament);
+  if (state.invalidScores.length) fail('A saved score has unresolved or different opponents. Restore a copy with the original pairings.');
+  if (!state.advancementValid) fail('The playoff order must include every eligible entry once, in standings order. Only tied entries may swap.');
+  if (extended && Object.keys(tournament.scoreSides).some(key => !Object.hasOwn(tournament.scores, key))) fail('A saved pairing has no score.');
   return tournament;
 }
 
 export function encodeBackup(tournament) {
-  return JSON.stringify({ format: FORMAT, version: VERSION, tournament: validateTournament(tournament) }, null, 2);
+  const checked = validateTournament(tournament);
+  return JSON.stringify({ format: FORMAT, version: formatType(checked) === 'round_robin' ? VERSION : 2, tournament: checked }, null, 2);
 }
 export function decodeBackup(source) {
   if (typeof source !== 'string' || new TextEncoder().encode(source).length > MAX_FILE_BYTES) fail('Choose a tournament backup smaller than 100 KB.');
   let data;
   try { data = JSON.parse(source); } catch { fail('This file is not a readable tournament backup.'); }
-  if (!record(data) || data.format !== FORMAT || data.version !== VERSION) fail('Choose a version 1 backup from this browser edition. Django archives and other files cannot be opened here.');
+  if (!record(data) || data.format !== FORMAT || ![VERSION, 2].includes(data.version)) fail('Choose a version 1 or 2 backup from this browser edition. Django archives and other files cannot be opened here.');
+  if ((data.version === 1 && formatType(data.tournament ?? {}) !== 'round_robin') || (data.version === 2 && formatType(data.tournament ?? {}) === 'round_robin')) fail('The backup version does not match its tournament format.');
   return validateTournament(data.tournament);
+}
+
+export function competitionState(tournament) { return buildCompetition(tournament, makeSchedule); }
+
+// Prepare a reviewable edit without mutating the current event. Dependent scores
+// are removed only from this proposal; the UI confirms the effect before saving.
+export function reviseTournament(tournament, edit) {
+  const next = structuredClone(tournament), before = competitionState(tournament);
+  const extended = formatType(next) !== 'round_robin';
+  const remove = key => { delete next.scores[key]; if (next.scoreSides) delete next.scoreSides[key]; };
+  let prelimChanged = false;
+  if (edit.type === 'score') {
+    const match = before.matches.find(m => m.id === edit.id);
+    if (!match || !['ready', 'scored'].includes(match.status)) fail('That game is not ready for a score.');
+    if (edit.score) {
+      next.scores[edit.id] = validateScore(...edit.score, next.target);
+      if (extended) { next.scoreSides ??= {}; next.scoreSides[edit.id] = sideSignature(match); }
+    } else remove(edit.id);
+    const changed = JSON.stringify(match.score) !== JSON.stringify(edit.score);
+    prelimChanged = changed && match.preliminary;
+    if (formatType(next) === 'king_queen' && changed && (!edit.score || !match.score || (edit.score[0] > edit.score[1]) !== (match.score[0] > match.score[1]))) {
+      before.matches.filter(m => m.socialRound > match.socialRound).forEach(m => remove(m.id));
+    }
+  } else if (edit.type === 'withdrawal') {
+    if (!next.scheduled || !next.teams.some(team => team.id === edit.id)) fail('Choose a scheduled roster entry.');
+    next.withdrawn = next.withdrawn.filter(id => id !== edit.id);
+    if (edit.withdrawn) next.withdrawn.push(edit.id);
+    prelimChanged = !Object.keys(next.advancement ?? {}).length;
+  } else if (edit.type === 'join' || edit.type === 'leave') {
+    // Rounds with scores are frozen; the change applies only to rounds nobody has scored.
+    if (formatType(next) !== 'rotating_partners' || !next.scheduled) fail('Late arrivals and early departures are for a started rotating-partners event.');
+    const played = Math.max(0, ...before.matches.filter(m => m.score).map(m => m.socialRound));
+    next.windows ??= {};
+    if (edit.type === 'join') {
+      if (next.teams.length >= MAX_TEAMS) fail('The event is full: 16 people is the limit.');
+      if (!Number.isInteger(edit.from) || edit.from <= played) fail(`Rounds up to ${played} already have scores. Choose a later round.`);
+      next.teams.push(edit.team);
+      next.windows[edit.team.id] = [edit.from, null];
+    } else {
+      if (!next.teams.some(team => team.id === edit.id)) fail('Choose a person on the roster.');
+      if (!Number.isInteger(edit.after) || edit.after < played) fail(`Rounds up to ${played} already have scores. Choose a later round.`);
+      next.windows[edit.id] = [next.windows[edit.id]?.[0] ?? 1, edit.after];
+    }
+  } else fail('Unknown tournament change.');
+  if (playoffFormat(next) && prelimChanged) {
+    next.advancement = {};
+    next.qualifyingWithdrawn = [];
+    Object.keys(next.scores).filter(key => key.startsWith('e-')).forEach(remove);
+  }
+  if (extended) {
+    // Removing an unreachable score can make another later score unreachable.
+    for (let i = 0; i <= 256; i++) {
+      const state = competitionState(next);
+      if (!state.invalidScores.length) break;
+      state.invalidScores.forEach(remove);
+    }
+  }
+  const cleared = Object.keys(tournament.scores).filter(id => id !== edit.id && !Object.hasOwn(next.scores, id));
+  return { tournament: validateTournament(next), cleared, advancementReset: Boolean(Object.keys(tournament.advancement ?? {}).length && !Object.keys(next.advancement ?? {}).length) };
 }
 
 // A walkover is derived, never stored: an unplayed game involving a withdrawn
