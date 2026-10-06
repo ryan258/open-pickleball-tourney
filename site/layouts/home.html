@@ -4,29 +4,36 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="A simpler way to run your community pickleball tournament. Add teams, make a schedule, and keep score on one device.">
-  <meta name="theme-color" content="#173f35">
+  <meta name="theme-color" content="#103b32">
   <meta name="robots" content="noindex">
   <title>{{ .Site.Title }}</title>
-  {{ $css := resources.Get "css/style.css" | fingerprint }}
+  {{ $css := resources.Get "css/style.css" | resources.ExecuteAsTemplate "assets/style.css" . | fingerprint }}
   <link rel="stylesheet" href="{{ $css.RelPermalink }}">
   <link rel="icon" href="{{ "icon.svg" | relURL }}" type="image/svg+xml">
   {{ $js := resources.Get "js/app.js" | js.Build (dict "targetPath" "assets/app.js" "target" "es2020") | fingerprint }}
   <script src="{{ $js.RelPermalink }}" defer></script>
+  {{ $poster := resources.Get "images/pickleball-poster.webp" | fingerprint }}
+  {{ $community := resources.Get "images/pickleball-community.webp" | fingerprint }}
+  {{ $font := resources.Get "fonts/Anton-Regular.ttf" | fingerprint }}
+  {{ $posterURL := $poster.RelPermalink }}{{ $communityURL := $community.RelPermalink }}
+  {{ if eq hugo.Environment "portable" }}{{ $posterURL = printf "./images/%s" (path.Base $posterURL) }}{{ $communityURL = printf "./images/%s" (path.Base $communityURL) }}{{ end }}
+  <link rel="preload" href="{{ $font.RelPermalink }}" as="font" type="font/ttf" crossorigin>
 </head>
-<body {{ if hugo.IsServer }}{{ else if eq hugo.Environment "portable" }}data-portable{{ else }}data-worker="{{ "sw.js" | relURL }}"{{ end }}>
+<body data-poster="{{ $posterURL }}" data-community="{{ $communityURL }}" {{ if hugo.IsServer }}{{ else if eq hugo.Environment "portable" }}data-portable{{ else }}data-worker="{{ "sw.js" | relURL }}"{{ end }}>
   <a class="skip" href="#main">Skip to tournament</a>
   <header class="site-header">
     <div class="header-inner">
       <button class="brand" data-action="home" aria-label="Open Pickleball Tourney home">
-        <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><rect x="2" y="2" width="44" height="44" rx="12" fill="currentColor"/><path d="M12 12h24v24H12zM12 24h24M24 12v24M12 19h24M12 29h24" fill="none" stroke="#f5f2e9" stroke-width="1.5"/><circle cx="34" cy="14" r="6" fill="#dcee9c" stroke="#173f35" stroke-width="2"/></svg>
+        <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><rect x="2" y="2" width="44" height="44" rx="12" fill="currentColor"/><path d="M12 12h24v24H12zM12 24h24M24 12v24M12 19h24M12 29h24" fill="none" stroke="#f5f0df" stroke-width="1.5"/><circle cx="34" cy="14" r="6" fill="#edc259" stroke="#103b32" stroke-width="2"/></svg>
         <span>OPEN PICKLEBALL<span class="brand-sub">TOURNEY</span></span>
       </button>
-      <div class="header-actions"><span class="edition">THE COMMUNITY EDITION</span><button class="button quiet" data-action="help">How it works</button></div>
+      <div class="header-actions"><span class="edition">THE COMMUNITY EDITION</span><button class="button quiet" data-action="contrast" aria-pressed="false">High contrast</button><button class="button quiet" data-action="help">How it works</button></div>
+      <div class="header-tools">
+        <button class="button quiet saved-copy" data-action="import">Open a saved copy</button>
+        <div class="utility-bar" id="utility" hidden><span id="save-status" role="status">Saved on this device</span><button class="button" data-action="backup">Download a copy</button></div>
+      </div>
     </div>
   </header>
-  <div class="utility-bar" id="utility" hidden>
-    <div class="utility-inner"><span id="save-status" role="status">Saved on this device</span><div class="button-row"><button class="button small quiet" data-action="backup">Download a copy</button><button class="button small quiet" data-action="import">Open a saved copy</button></div></div>
-  </div>
   <div id="problem" class="notice problem" role="alert" hidden></div>
   <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
   <nav id="steps" class="steps" aria-label="Tournament steps" hidden></nav>
@@ -34,7 +41,7 @@
     <div class="loading"><h1>Your next great game starts here.</h1><p>Opening your tournament desk…</p><p>If this message stays here, reload the page. If you are offline, reconnect once to load the tournament tool.</p></div>
     <noscript><div class="notice">This tournament tool needs JavaScript to keep scores and save your work. Enable JavaScript in your browser, then reload this page.</div></noscript>
   </main>
-  <footer class="site-footer"><p>Less organizing. More pickleball.</p><div><span>One organizer. One device.</span><span id="offline-status">Keep this tab open if you lose internet.</span>{{ if and (not hugo.IsServer) (ne hugo.Environment "portable") }}<a href="{{ "download/open-pickleball-tourney.zip" | relURL }}" download>Download an offline copy</a>{{ end }}</div></footer>
+  <footer class="site-footer"><div class="footer-motto"><span>OPEN PICKLEBALL TOURNEY</span><span>Same courts. A happier neighborhood.</span><span>Good people play here.</span></div><div class="footer-details"><span>One organizer. One device.</span><span id="offline-status">Keep this tab open if you lose internet.</span>{{ if and (not hugo.IsServer) (ne hugo.Environment "portable") }}<a href="{{ "download/open-pickleball-tourney.zip" | relURL }}" download>Download an offline copy</a>{{ end }}</div></footer>
   <dialog id="modal" aria-labelledby="modal-title"><div id="modal-content"></div></dialog>
   <input id="backup-file" type="file" accept=".json,application/json" hidden aria-label="Choose a saved tournament copy">
   <section id="print-area" aria-label="Printable tournament"></section>
