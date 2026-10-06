@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test site/tests/browser-rules.test.mjs
+      - run: node --test site/tests/browser-rules.test.mjs site/tests/formats.test.mjs site/tests/desk.test.mjs
       # Standard (non-extended) Hugo: this also proves site/README.md's claim that it suffices.
       - name: Install Hugo
         run: |
