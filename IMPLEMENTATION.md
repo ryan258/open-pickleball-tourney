@@ -2,6 +2,89 @@
 
 ## Browser edition — October 5, 2026
 
+### Community poster theme (local)
+
+The homepage and shared tournament UI now follow Ryan's attached sports-poster
+reference: cream paper, forest green, vermilion/gold/blue accents, a bundled
+Anton display font, a live HTML headline and example scorecard, and two
+transparent illustrations. Both raster assets are WebP (353,366 bytes combined);
+the logo remains SVG. No PNG/JPEG files are shipped by the browser site. Prompts
+and asset provenance are recorded in `site/ART-DIRECTION.md`; the font license
+is included in the static output. The seven-format behavior remains intact.
+
+Evidence from the theme pass:
+
+- Standard, portable and project-subpath Hugo builds passed. The portable
+  stylesheet's font path and the HTML's image paths resolve inside the package.
+  The refreshed local offline ZIP includes the artwork and font.
+- All 13 checks in the existing organizer browser smoke script passed after
+  the shared header/home changes. Header backup download produced a valid
+  copy; restoring it through the file input/preview/confirmation saved it again.
+- Desktop (1440/1660), tablet (900), and mobile (320/390) layouts were inspected
+  in Chromium. The 320-pixel document remained 320 pixels wide. Setup and play
+  screens, the saved-event banner and header controls were also inspected.
+- A project-subpath build reopened while network emulation was offline. An
+  uncached probe failed while both WebP images decoded and the bundled font
+  loaded. The worker cache contained the matching HTML, CSS, JS, SVG, WebPs
+  and font. This verifies that local Chromium cache, not future hosting.
+- WebP format/alpha, JavaScript syntax and whitespace checks passed. No new
+  rules test suite or Django suite was run for the visual changes.
+
+No commit, deployment or publication. Real Safari/tablet, voice/screen-reader
+use, physical printing and portable `file://` opening remain unverified.
+
+### Seven-format expansion (local)
+
+Ryan requested the competitive and social formats discussed in this session.
+The browser edition now provides round robin, round robin into playoffs,
+pool play into playoffs, single elimination, true double elimination with a
+conditional reset final, rotating partners, and king/queen of the court.
+See `site/README.md` for the exact house rules and size/rotation limits.
+
+Setup includes format-specific controls and game-count previews; roster arrows
+set seeds without dragging. Pool qualification requires explicit review and
+tie ordering. Confirmed qualification freezes the preliminary withdrawal record
+so later withdrawals follow the existing bracket. Score correction/clearing and
+reinstatement preview dependent results before clearing them. New-format scores
+bind to their ordered opponents; version 2 restoration rebuilds and checks the
+draw. Existing version 1 round-robin records and the storage key are preserved.
+
+Evidence from this pass:
+
+- **22 focused Node checks passed**: the nine original browser rules/storage
+  cases plus 13 format cases. Includes bracket sizes 2–16, byes, bronze games,
+  two-loss counts and reset finals, varied winners, uneven pools, qualification
+  ties, balanced mixer appearances, ladder movement, dependent corrections,
+  withdrawals after qualification, legacy recovery and malformed/new backups.
+- **Browser checks passed in isolated Chromium contexts**: the original 13
+  checks and 140 assertions in `browser-formats-smoke.js`. The latter completes
+  all seven practice formats using actual controls, inspects print markup and
+  exercises normal setup, seed movement and cancel/confirm correction paths.
+  One rerun initially failed because the script advanced before an asynchronous
+  score save; explicit waits for dialog/save completion fixed the harness, and
+  the updated script passed. This is not physical printing evidence.
+- **Backup UI checked separately**: a version 2 double-elimination copy restored
+  its format and saved score; a copy with a changed opponent binding was rejected
+  without replacing the current event.
+- **320-pixel viewport check**: setup, roster, play and results stayed within
+  the viewport; the expanded setup was inspected visually. No real-device or
+  assistive-technology acceptance is implied.
+- Standard and portable Hugo builds passed; JavaScript syntax and diff checks
+  passed. The site/Pages check commands now include the new format tests.
+
+GitNexus impact was run before edits. Resolved original functions reported LOW
+risk; callback/file UNKNOWN results were checked in current source. The CLI
+continued to report the older index (six commits behind); newly introduced
+functions were not found in that graph. Ryan reported running analyze, but the
+local metadata visible during this pass did not yet reflect a refresh. No
+agent-run reindex or Django suite was performed.
+
+All changes remain local and uncommitted. No publication or deployment occurred.
+Still unverified: an attended event, real Safari/tablet use, screen reader/voice
+operation, physical printouts, and opening the portable edition via `file://`.
+
+### Earlier browser-edition evidence
+
 The active single-organizer direction is implemented separately in `site/`.
 The local Hugo build and targeted Node checks pass. Browser checks exercised
 creation, a five-team/ten-match event, score validation/review/correction,

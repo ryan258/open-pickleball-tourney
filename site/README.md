@@ -5,34 +5,110 @@ No accounts, npm dependencies, external fonts, analytics, API, or cloud database
 The site is not published yet; it is prepared to publish as a GitHub Pages micro
 site (see "Publishing and updating"). The earlier Django edition is intact.
 
+## Visual theme and assets
+
+The community-poster theme uses warm cream, forest green, vermilion, gold and
+dusty blue. The homepage pairs live HTML headlines and an example scorecard
+with two transparent WebP illustrations. Setup, roster, scoring and results
+share the palette and locally bundled Anton display font; form labels and body
+copy retain a plain sans serif. No font or image needs a third-party request.
+
+All raster artwork in the browser site is WebP: `pickleball-poster.webp`
+(1448 × 1086, 293,402 bytes) and `pickleball-community.webp`
+(800 × 400, 59,964 bytes). The court logo stays SVG. The original generated
+PNGs are not shipped. Hugo fingerprints both illustrations and the font; the
+service worker caches them with the HTML, CSS and JavaScript. Portable builds
+use relative asset paths, including the font URL inside the stylesheet.
+
+See [ART-DIRECTION.md](ART-DIRECTION.md) for the generation prompts and asset
+provenance. The bundled font's license is in `static/licenses/Anton-OFL.txt`.
+
 ## Organizer workflow
 
-1. Start a tournament; name it, set the date and courts, choose singles/doubles.
-2. Add 2–16 entries (up to 32 people in fixed doubles pairs). A pasted doubles
-   list uses one pair per line: `Pat and Lee` (`&` and `/` also work). Identical names must be distinguished
-   with initials or another recognizable display name.
-3. Make the schedule. Every entry plays every other once. Groups use available
-   courts without putting anyone on two courts at once, filling idle courts from
-   later rounds when no one would play twice. An odd roster has byes.
-4. Start a round (the screen's word for a group of games on the courts) when
-   everyone is ready; finish it before starting the
-   next. The tool does not measure minimum rest or predict finish times.
-5. Enter scores, review the named winner, then confirm. Each match is one game
-   to 11, 15 or 21, win by two. Correct or clear a saved score in the full schedule.
-   The court count can be changed mid-event on the setup step; saved scores stay
-   attached to their games and unplayed games are regrouped.
-   **Withdraw** an entry on the teams step if it must leave: its played games
-   stay, each remaining game becomes a marked walkover (the opponent gets the
-   win, no points are recorded for either side), and the entry is listed last
-   and unranked. **Reinstate** reverses it. Changing the roster still clears
-   the schedule, scores and withdrawals.
-6. See standings ranked by wins, point difference, then points scored. Remaining
-   ties share a place. Print results or the schedule with blank score spaces.
-7. Print the results, download a copy; reuse the settings and roster for another day if desired.
+1. Name the event and choose a format, court count and game target. Every match
+   is one game to 11, 15 or 21, win by two. These are casual house rules.
+2. Add names individually or paste one entry per line. Fixed doubles use
+   `Pat and Lee` (`&` and `/` also work). Social formats take individual names
+   and make doubles pairings. Distinguish identical names with initials.
+3. Review the roster, game count, seeds and any pool assignments before making
+   the schedule. Up/down buttons set seed order without dragging. High seeds
+   get first-round byes; pools use snake seeding from this order. No skill
+   rating is inferred. See the format table below for size limits.
+4. Start the displayed court group together. Finish it before the next group.
+   There is no promised rest interval or predicted finish time. Future bracket
+   opponents are named as winner/loser placeholders; ladder rounds appear
+   after the preceding round finishes.
+5. Enter scores, review the named winner and any consequences, then confirm.
+   Correct or clear scores from the full schedule. A correction that changes
+   later opponents clears affected later scores **only after review**. Changes
+   to preliminary results reopen playoff qualification; ladder winner changes
+   clear later rounds. Unaffected scores remain.
+6. For playoff qualification, review the preliminary standings and explicitly
+   order remaining ties with selectors. A lower-ranked entry cannot jump ahead.
+   Confirming qualifiers locks the bracket and preliminary withdrawal record;
+   later withdrawals follow that bracket without reseeding.
+7. Print schedules/results or download a copy. Reuse keeps the format, settings
+   and roster for another day, with scores and advancement cleared. The home
+   screen offers a practice tournament for every format.
+
+| Format | Entries and settings | Advancement and results |
+| --- | --- | --- |
+| Round robin | 2–16 singles players or fixed doubles teams; 1–8 courts | Every pair meets once. Wins, point margin, then points scored; remaining ties share a place. |
+| Round robin → playoffs | Same, with at least 2/4/8 entries for the selected playoff | Top 2, 4 or 8 qualify after organizer review; single-elimination finish. |
+| Pool play → playoffs | 2 or 4 pools; at least two entries per pool, up to 16 total | Snake-seeded round robins; top two active entries per pool. Cross-pool first-round opponents. Unequal pools keep separate standings. |
+| Single elimination | 2–16 fixed entries; 1–8 courts | One loss ends championship contention. Optional bronze game for semifinal losers; no full consolation bracket. |
+| Double elimination | 2–16 fixed entries; 1–8 courts | Upper and lower brackets. Two losses eliminate an entry; reset final if the lower finalist wins the first final. Withdrawals end participation without inventing a score. |
+| Rotating partners | 4–16 individuals; 1–8 available courts; 1–30 rounds | Full doubles courts, balanced appearances, fewer repeat partners/opponents. Not a complete partnership round robin. Individual places use win percentage, average point margin, then average points scored. |
+| King / queen of the court | 4, 8, 12 or 16 individuals; exactly four per selected court; 1–30 rounds | Court 1 is highest. Winners move up, losers down; top winners/bottom losers stay. Partners split. Last-round court and outcome determine shared finishing places. |
+
+Single-elimination playoffs can include a bronze game; without it semifinal
+losers share third. Byes add no played wins/losses. Bracket placements come from
+bracket finishes, not total wins, and appear when the event is complete.
+
+**Court changes.** Fixed-entry formats can change court count during an event
+without losing scores. Social formats lock court count after scheduling because
+it defines their rotations. Reset the schedule to change it.
+
+**Withdrawals.** Played games stay. An unplayed matchup involving a withdrawn
+entry becomes a walkover: the other side wins without points. In a mixer, an
+absent player forfeits their assigned side for that game. If both sides contain
+an absent entry, neither receives a win. Reinstating restores playable matchups
+and previews affected scores before clearing them. Withdrawn entries are
+unranked. The court ladder needs a full roster, so it does not offer withdrawal:
+back up the event and reset with a complete roster instead. Changing the roster
+or format after scheduling requires explicitly clearing scores and advancement.
 
 These are casual adult community events. There are no online registrations,
-multiple divisions, live multi-device editing, elimination brackets, payment,
-email, ratings, consent records, or sanctioned-event eligibility checks here.
+multiple divisions, live multi-device editing, payment, email, ratings, consent
+records or sanctioned-event eligibility checks here. Team leagues, Swiss rounds,
+full consolation brackets, timed games and multi-game matches are not included.
+
+## Running a real day
+
+- **Plan by time.** On the setup step, enter how many people or teams, the
+  minutes you have and minutes per game (defaults 15/20/30 for games to
+  11/15/21). The tool lists each format with a rough duration and marks the first
+  that fits; **Use this** fills the form. These are estimates for planning only.
+  The app still promises no finish time during play.
+- **Late arrivals (rotating partners only).** On the roster step, add someone
+  with the round they join. **Done for the day** removes someone from rounds
+  not yet scored. Scored rounds never change; later pairings are re-made.
+  Every round needs at least four people. Fixed formats cannot take late
+  entries: their schedules are a promise to registered players (use rotating
+  partners for drop-in play, or reset and restart).
+- **Display board.** *Display board* on the Play step opens a second window
+  (`#board`) with large type: games on court now, then the next group. Move it
+  to a TV or second screen. It reads the same browser's saved record and updates
+  by itself, so it works on this device only. It is not a link for players'
+  phones.
+- **Share results.** Results step: opens the phone's share sheet, or copies plain
+  text for a group chat. Names are included on purpose; the organizer chooses to
+  share.
+- **Undo last score** (this tab only, until the next score or reload), **screen
+  stays awake** on the Play step and the board where the browser supports it,
+  and a **High contrast** toggle for outdoor glare (remembered per browser).
+- Backups with late arrivals use version 2 with a `windows` field. Older apps
+  reject them rather than misreading.
 
 ## Saving and recovery
 
@@ -52,11 +128,14 @@ email, ratings, consent records, or sanctioned-event eligibility checks here.
   and scores. Save it somewhere retrievable. **Open a saved copy** validates and
   previews the event before replacing the current one. Backups contain player
   names; share them deliberately. Unknown fields are discarded. Matches and
-  standings are recalculated. A backup is not authenticated proof of results.
+  standings are recalculated; new-format scores must match their saved opponents. A backup is not authenticated proof of results.
 - A corrupt saved record is not overwritten on opening the site. Download its
   original data from the recovery notice, or restore a known good backup.
 - Starting a new/practice/reused event requires confirmation if an event exists.
   Only the latest event remains locally; export earlier events before replacing.
+- Round-robin copies use version 1. Other formats use version 2 so older apps
+  reject them instead of misreading them. This app reads both; existing version 1
+  records need no manual migration. The browser storage key stays unchanged.
 - Browser backups and Django archives are separate formats. No migration between
   them is implemented.
 
@@ -154,25 +233,25 @@ sync or network connection is needed for calculations and local saving.
 ## Focused checks and limits
 
 ```sh
-node --test site/tests/browser-rules.test.mjs
+node --test site/tests/browser-rules.test.mjs site/tests/formats.test.mjs site/tests/desk.test.mjs
 ```
 
-Nine targeted checks cover pairing, minimum-group court packing and stable match
-IDs for every supported entry count and court count, score boundaries,
-ranking/correction, walkover/withdrawal rules and validation, backup validation,
-failed storage, and stale/concurrent writers through a simulated browser lock.
-They do not run the earlier Django suite, and the UI handlers in `app.js` have no
-Node tests; the browser smoke script below covers them. Browser evidence is
-recorded in `IMPLEMENTATION.md`.
+The original nine checks cover round-robin pairing/court packing, stable match
+IDs, score boundaries, standings, withdrawal rules, backup validation, failed
+saving and stale/concurrent writers. Five `desk.test.mjs` checks (late arrivals and departures, the time planner, shareable
+results text and the board model) were added October 6; all 27 checks across the three files passed in Ryan's run. Thirteen additional format checks cover
+2–16-entry brackets, double-final resets and two-loss invariants, bronze games,
+pools and qualification ties, balanced mixer rests, ladder movement, dependent
+score corrections, frozen playoff seeding, withdrawals and versioned restoration.
 
-**Browser smoke script.** Serve the site (`./play` or a static build), open it in a
-window with no saved tournament (a private window is easiest), and paste
-`site/tests/browser-smoke.js` into the DevTools console. It drives the real UI
-through a practice event: score validation and review, correction from the full
-schedule, withdrawal and reinstatement, the saved record, and a mid-event court
-change. It prints a PASS/FAIL table, refuses to run over a saved tournament and
-removes its own record. It is a Chromium-console check, not cross-browser or
-accessibility evidence.
+**Browser smoke scripts.** Serve the site, use a fresh/private browser window
+with no saved event, and paste `site/tests/browser-smoke.js` or
+`site/tests/browser-formats-smoke.js` into DevTools. Each refuses to overwrite an
+existing saved event and removes its own record. Reload afterwards to clear the
+in-memory test state. The first checks the original round-robin workflow; the
+second completes all seven formats through the real controls, checks print
+markup, and exercises new setup, seeding and correction confirmation. These
+are Chromium checks, not cross-browser or accessibility certification.
 
 **CI.** `.github/workflows/site.yml` runs the Node tests and a standard-Hugo
 `--panicOnWarning` build for changes under `site/`. It checks only; it never

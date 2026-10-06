@@ -1,10 +1,17 @@
 # Open Pickleball Tourney
 
+> **Status (October 6):** the Django edition described further down is paused.
+> Active work is the browser tournament desk in [`site/`](site/).
+
 **The new direction is a simple browser tournament desk for one organizer on one
 computer or tablet.** The Hugo site in [`site/`](site/) handles event setup,
-fixed singles/doubles entries, a round-robin schedule, reviewed scores, standings,
-printing, browser-local saving, and downloadable backup/restore. There are no
-accounts or remote data services. It supports 2–16 entries on 1–8 courts.
+seven formats (round robin, round robin into playoffs, pool play into playoffs,
+single elimination, double elimination with reset finals, rotating partners, and king/queen
+court ladders), time planning, display-board views, shareable results text, reviewed
+scores, printable sheets, browser-local saving, and backup recovery. Fixed formats
+support 2–16 singles players or doubles teams on 1–8 courts; social formats take 4–16
+individuals (rotating partners supports late arrivals and early departures; the court
+ladder needs exactly four players per court). No accounts or remote data services.
 
 For a local development preview:
 
@@ -13,7 +20,7 @@ For a local development preview:
 ```
 
 Open [localhost:1313](http://localhost:1313/). **Try a practice tournament** is a
-ready-to-play example; **Start a tournament** begins your own event. `./play`
+ready-to-play example in your chosen format; **Start a tournament** begins your own event. `./play`
 is a maintainer command using the installed Hugo. Once the site is hosted,
 organizers will only need its address and a browser. The intended home is a
 GitHub Pages micro site, updated by pushing changes to `main` (see
@@ -106,8 +113,9 @@ A scorer must have an active event scorer role **and** an assignment to the matc
 
 Real concurrent PostgreSQL clients, provider delivery, load testing, browser/device coverage and assistive-technology checks remain separate work. CI (`.github/workflows/test.yml`) runs the checks and suite on every push and pull request.
 
-## Documentation & online showcase
+## Documentation, rules & online showcase
 
-A static documentation portal for the Django edition lives in [`docs/`](docs/). It is **not published and has no deploy workflow**: a repository serves one Pages site, and [`.github/workflows/pages.yml`](.github/workflows/pages.yml) is now prepared to publish the browser edition from `site/` (after Pages is enabled under Settings → Pages → Source: GitHub Actions). The Django application itself runs locally.
+- **101 Rules Questions & Answers:** [`docs/101-really-good-pickleball-rules-questions-w-answers.md`](docs/101-really-good-pickleball-rules-questions-w-answers.md) provides a comprehensive rules reference checked rule-by-rule against the 2026 USA Pickleball Official Rulebook, including explicit comparisons where this app's casual house rules differ.
+- **Showcase portal:** A static architecture showcase for the Django edition lives in [`docs/`](docs/). It is **not published and has no deploy workflow**: a repository serves one Pages site, and [`.github/workflows/pages.yml`](.github/workflows/pages.yml) is prepared to publish the browser edition from `site/` (after Pages is enabled under Settings → Pages → Source: GitHub Actions). The Django application itself runs locally.
 
 See [OPERATIONS.md](OPERATIONS.md) for backups, restores, uncertain delivery, and hosting boundaries. No license has been selected; this project does not yet claim an open-source release or sanctioned-event approval.

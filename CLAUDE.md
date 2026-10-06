@@ -8,24 +8,32 @@ Read `site/README.md` and the October 5 contract at the top of `spec.md`.
 The existing Django application remains intact as a separate edition.
 
 - Browser code: `site/assets/js/engine.mjs` (pure rules and backup validation),
+  `competition.mjs` (brackets, pools and social rotations),
+  `desk.mjs` (time planner, shareable results text, display-board model),
   `storage.mjs` (locked browser saving), `app.js` (guided UI).
 - Hugo: `site/layouts/home.html`, `home.serviceworker.js`, `site/hugo.toml`;
   readable CSS in `site/assets/css/style.css`. No npm install or external assets.
 - Build: `hugo --source site --cacheDir "$PWD/site/.cache" --cleanDestinationDir --panicOnWarning`.
-- Targeted browser checks only: `node --test site/tests/browser-rules.test.mjs`.
+- Targeted browser checks only: `node --test site/tests/browser-rules.test.mjs site/tests/formats.test.mjs site/tests/desk.test.mjs`.
   Do not run the unrelated Django suite for static-only edits.
 - Records belong to one browser/address; never claim shared editing or server
   backup. Saving failures must keep recoverable data and visibly report failure.
-- Current scope is casual round robin, 2–16 entries, 1–8 courts, fixed singles
-  or doubles, one game to 11/15/21 and win by two. No sanctioned-event claims.
+- Seven casual formats: round robin, round robin/playoffs, pools/playoffs,
+  single elimination, double elimination, rotating partners and king/queen.
+  Fixed formats: 2–16 entries, 1–8 courts. Social: 4–16 individuals; ladder
+  needs exactly four per court. One game to 11/15/21, win by two.
+- Preserve version 1 round-robin backups and the existing storage key. New
+  formats write version 2 with score-to-opponent bindings and confirmed
+  qualification records. All corrections use `reviseTournament` for a
+  reviewable consequence preview. No sanctioned-event claims.
 - Static output is `site/public/` (ignored). `.github/workflows/pages.yml` is
   prepared to publish `site/` as the GitHub Pages micro site (the `docs/`
   showcase is no longer what it serves). It has never run: enabling Pages,
   pushing and triggering it are Ryan's actions, not an agent's.
 
-## Existing Django edition
+## Existing Django edition (sidelined October 6; do not extend)
 
-Local Django 5.2 / Python 3.13 app for adult community pickleball events. Read [README.md](README.md), [IMPLEMENTATION.md](IMPLEMENTATION.md) (evidence and limits) and [roadmap.md](roadmap.md) (next work); [spec.md](spec.md) documents its broader target scope (historical/advanced scope relative to the active browser edition).
+Ryan paused this edition. Only touch it if he asks. Local Django 5.2 / Python 3.13 app for adult community pickleball events. Read [README.md](README.md), [IMPLEMENTATION.md](IMPLEMENTATION.md) (evidence and limits) and [roadmap.md](roadmap.md) (next work); [spec.md](spec.md) documents its broader target scope (historical/advanced scope relative to the active browser edition).
 
 - Run: `./tour` (isolated demo) or `./tour serve`. Python is `.venv/bin/python`.
 - Tests: `.venv/bin/python manage.py test` is the whole suite (about 5 s). **Give Ryan this command and let him run it; do not run suites or `gitnexus analyze` in a session.**

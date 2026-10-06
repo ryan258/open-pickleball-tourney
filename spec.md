@@ -1,5 +1,64 @@
 # Feature: Open Pickleball Tourney
 
+## October 5 expansion: common tournament and social formats
+
+Ryan requested all formats discussed for the browser edition. This extends the
+original round-robin contract below; one organizer/device, fixed scoring, local
+saving and the 16-entry ceiling remain. Implementation and verification evidence
+belong in `IMPLEMENTATION.md`.
+
+- Seven choices: round robin; round robin into a top-2/4/8 single-elimination
+  playoff; 2 or 4 round-robin pools into a playoff (top two per pool); single
+  elimination; true double elimination; rotating-partner doubles; king/queen
+  of the court. Single-elimination playoffs offer an optional bronze game,
+  not a full consolation bracket. These are explicit casual house rules.
+- Fixed formats use singles or fixed doubles. Roster order is seeding order,
+  editable with buttons before scheduling. Byes go to high seeds. Pools use
+  snake seeding; playoff openings pair winners against runners-up from other
+  pools. No ratings service or inferred skill level.
+- Pool and round-robin playoff standings use wins, point difference, then
+  points scored. The organizer reviews advancement and explicitly orders any
+  remaining ties using selectors. A lower-ranked entry cannot replace a
+  higher-ranked entry. Withdrawn entries cannot qualify. Pool ranks are kept
+  separate; unequal pools are not compared by raw totals.
+- Double elimination has upper/lower brackets and a reset final if the upper
+  winner loses the first final. A bye is not a win or a loss. Withdrawals can
+  end participation without two played losses. Bracket places follow bracket
+  finishes rather than total wins; unfinished brackets do not claim final places.
+- Rotating partners accepts 4–16 individuals, 1–8 available courts and 1–30
+  rounds. Use as many full courts as possible, balance appearances, and prefer
+  less-repeated partners/opponents. This is a mixer, not a guarantee that all
+  possible partnerships occur. Court count stays fixed once started. Individual
+  ranks use win percentage, average
+  point difference, then average points scored; real ties remain ties.
+- King/queen accepts 4, 8, 12 or 16 individuals, exactly four per selected
+  court, and 1–30 rounds. Court 1 is highest. Winners move up one court, losers
+  down one; the top winners and bottom losers stay. Incoming pairs split into
+  new partnerships. Next-round pairings wait for all current-round scores.
+  Final court and last-round outcome determine shared finishing places.
+  Roster/courts remain fixed once started; an absence requires a backed-up
+  restart with a complete roster. No silently invented substitute or result.
+- Show format rules, game counts/ranges, seeding/pool assignments and limits
+  before scheduling. Keep every named court, score, advancement and print view
+  usable without drag interactions. Future opponents display as placeholders.
+- Preview destructive consequences of corrections, clearing scores and
+  withdrawal/reinstatement. Preserve scores whose participants still match;
+  clear results dependent on changed advancement. Any preliminary result
+  change reopens playoff review. Ladder winner changes clear later rounds.
+  Confirming qualifiers freezes preliminary withdrawal status; a withdrawal
+  during playoffs follows the locked bracket without reseeding the event.
+- New-format scores bind to their ordered participants. Restore rebuilds
+  schedules and rejects unreachable scores, wrong pairings, invalid seeds,
+  unsupported formats and malformed settings. New formats use backup version 2;
+  version 1 remains readable as round robin. Keep the existing storage key.
+- Focused checks cover all seven formats, odd/uneven sizes, byes, court bounds,
+  double-final reset, ties, corrections, withdrawals, social partner/ladder
+  movement, restore boundaries, legacy recovery and real browser controls.
+
+References for terminology (not claims of sanctioned support):
+[USA Pickleball formats](https://usapickleball.org/sanctioning/formats/) and
+[Dogwood Pickleball ladder rules](https://www.dogwoodpickleball.ca/kings-queens-rules.html).
+
 ## October 5 direction: one organizer, one device
 
 Ryan selected a Hugo static site for an organizer using one computer or tablet.

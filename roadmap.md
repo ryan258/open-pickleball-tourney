@@ -8,11 +8,21 @@ verification, recovery, and build commands. The October 5 section of `spec.md`
 is its acceptance contract. The Django roadmap below is retained for that
 separate edition, rather than silently imposed on this smaller workflow.
 
-Implemented: guided setup and roster, bulk entry, round-robin court groups
-(packed across rounds), mid-event court changes, marked-walkover withdrawal,
+Implemented: guided setup and roster, bulk entry and seed-order buttons; seven
+formats (round robin, round robin/playoffs, pools/playoffs, single elimination,
+double elimination, rotating partners and king/queen); qualifier review,
+conditional reset finals, correction previews and protected score bindings;
+mid-event court changes for fixed entries, marked-walkover withdrawal,
 score review/correction, derived standings, printable schedule/results,
-browser-local storage, stale-tab rejection, versioned backup/restore, practice
-event and reuse, and static-build offline caching.
+browser-local storage, stale-tab rejection, versioned backup/restore (v1 and v2),
+practice event and reuse, and static-build offline PWA caching.
+
+Added October 6:
+- Desk tools: time planner (`planFormats`), late arrivals and early departures for rotating partners (`windows`), TV/wall display board (`boardModel`), plain-text results sharing (`resultsText`), undo last score, screen wake lock, high contrast mode.
+- Community poster aesthetic: vintage sports poster styling, local Anton typography, transparent WebP artwork assets, and local font license.
+- Documentation & rules: comprehensive [101 Really Good Pickleball Rules Questions (with Answers)](docs/101-really-good-pickleball-rules-questions-w-answers.md) cross-referenced against the 2026 USA Pickleball Official Rulebook and explicitly detailing casual house rules differences.
+- Verification: 27 focused Node tests passing across `browser-rules.test.mjs`, `formats.test.mjs`, and `desk.test.mjs`; standard and portable Hugo builds clean; browser console smoke coverage.
+- The Django edition remains paused.
 
 Next: Ryan's review of the local UI with a realistic event; real tablet,
 keyboard/voice/screen-reader and physical print checks; choose a stable public
