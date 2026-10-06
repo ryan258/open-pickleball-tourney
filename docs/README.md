@@ -1,14 +1,16 @@
-# Documentation & Architecture Showcase
+# Documentation, Rules & Architecture Showcase
 
-This directory contains the static documentation site, user guides, and architecture showcase for the Django edition.
+This directory contains the rules reference guide, user guides, and architecture showcase for the project.
 
 ## Status
 
-- **Not published.** `https://ryan258.github.io/open-pickleball-tourney/` is the intended address of the browser edition (built from `site/`; see [`.github/workflows/pages.yml`](../.github/workflows/pages.yml)). This `docs/` showcase has no deploy workflow; give it its own subpath or repository before publishing it.
+- **Active tournament desk:** the standalone browser edition in [`site/`](../site/) is the primary tournament tool for single-organizer events (7 casual formats, local storage, PWA offline caching). Its intended address is `https://ryan258.github.io/open-pickleball-tourney/` via [`.github/workflows/pages.yml`](../.github/workflows/pages.yml).
+- **Django edition:** paused; this `docs/` showcase describes its multi-division architecture and operations for local running (`./tour`). This showcase is not published to GitHub Pages.
 
 ## Directory Structure
 
-- [`index.html`](index.html): Responsive landing page, feature showcase, and tournament operations overview.
+- [`101-really-good-pickleball-rules-questions-w-answers.md`](101-really-good-pickleball-rules-questions-w-answers.md): Comprehensive 101 rules questions and answers reference, cross-referenced rule-by-rule with the 2026 USA Pickleball Official Rulebook, including explicit comparisons to this app's casual house rules.
+- [`index.html`](index.html): Responsive landing page, feature showcase, rules reference links, and tournament operations overview.
 - [`style.css`](style.css): Custom dark-athletic design system with responsive card layouts and glassmorphism.
 - [`app.js`](app.js): Vanilla JavaScript for interactive quickstart command switching and clipboard copying.
 - [`assets/`](assets/): High-resolution visual assets including hero banner graphic.

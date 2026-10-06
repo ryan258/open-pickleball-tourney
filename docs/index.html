@@ -26,6 +26,7 @@
           <li><a href="#quickstart" class="nav-link">Run &amp; Host</a></li>
           <li><a href="#workflow" class="nav-link">Event Workflow</a></li>
           <li><a href="#architecture" class="nav-link">Architecture</a></li>
+          <li><a href="101-really-good-pickleball-rules-questions-w-answers.md" class="nav-link">101 Rules FAQ</a></li>
           <li>
             <a href="https://github.com/ryan258/open-pickleball-tourney" class="btn-github" id="nav-github-link" target="_blank" rel="noopener noreferrer">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -72,9 +73,9 @@
       <div class="notice-card">
         <div class="notice-icon">💡</div>
         <div class="notice-content">
-          <h2>Architecture Note: Dynamic Django Application</h2>
+          <h2>Architecture Note: Dynamic Django Application &amp; Browser Edition</h2>
           <p>
-            Open Pickleball Tourney includes a full-stack Python 3.13 / Django 5.2 LTS application with immediate transactions, durable outbox message delivery, and role-based access. While this documentation portal is a static showcase for the Django edition, the actual tournament management runtime runs either locally on your laptop or hosted on any Python WSGI/PaaS platform. (GitHub Pages is prepared to serve the standalone browser edition in <code>site/</code>).
+            Open Pickleball Tourney includes two complementary implementations: the paused full-stack Python 3.13 / Django 5.2 LTS application for larger multi-division events (detailed below), and the active standalone browser edition in <code>site/</code> (7 casual &amp; competitive formats, offline-ready for a single device). For official rules guidance and casual house rule comparisons, explore our <a href="101-really-good-pickleball-rules-questions-w-answers.md" style="color: var(--accent-lime); text-decoration: underline;">101 Rules Questions &amp; Answers</a> guide.
           </p>
         </div>
       </div>
@@ -308,6 +309,7 @@ python manage.py work_outbox</code></pre>
         <p>Open Pickleball Tourney. Developed for community clubs and local tournaments. No license has been selected yet.</p>
       </div>
       <ul class="footer-links">
+        <li><a href="101-really-good-pickleball-rules-questions-w-answers.md">101 Rules FAQ</a></li>
         <li><a href="https://github.com/ryan258/open-pickleball-tourney" target="_blank" rel="noopener noreferrer">Source Code</a></li>
         <li><a href="https://github.com/ryan258/open-pickleball-tourney/blob/main/spec.md" target="_blank" rel="noopener noreferrer">Specification</a></li>
         <li><a href="https://github.com/ryan258/open-pickleball-tourney/blob/main/OPERATIONS.md" target="_blank" rel="noopener noreferrer">Operations Guide</a></li>
