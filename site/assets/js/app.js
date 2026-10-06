@@ -13,7 +13,7 @@ const unit = () => tournament?.mode === 'singles' ? 'players' : 'teams';
 const scope = location.pathname.replace(/index\.html$/, '').replace(/\/$/, '') || '/';
 const key = `open-pickleball-browser:v1:${scope}`;
 // Access to localStorage itself can throw under browser privacy policies.
-const storage = { getItem: name => window.localStorage.getItem(name), setItem: (name,value) => window.localStorage.setItem(name,value) };
+const storage = { getItem: name => window.localStorage.getItem(name), setItem: (name,value) => window.localStorage.setItem(name,value), removeItem: name => window.localStorage.removeItem(name) };
 // A page opened from a file has no usable browser locks. The read/compare/write is still one
 // synchronous step with stale-tab detection; only truly simultaneous tabs are uncoordinated.
 const locks = location.protocol === 'file:' ? { request: (_name, run) => Promise.resolve().then(run) } : navigator.locks;
@@ -95,8 +95,8 @@ async function navigate(next) {
   formDirty = false; view = next; render();
 }
 function homeView() {
-  const saved = tournament ? `<section class="saved-tournament" aria-label="Your saved tournament"><div><p class="eyebrow">PICK UP WHERE YOU LEFT OFF</p><h2>${escape(tournament.name)}</h2><p>${escape(dateLabel(tournament.date))} · ${tournament.teams.length} ${unit()}${tournament.scheduled ? ` · ${Object.keys(tournament.scores).length} scores saved` : ''}</p></div>${button('Continue tournament →','continue','')}</section>` : '';
-  return `${saved}${corrupt ? `<div class="notice recovery-notice"><p>Your original saved data is still here.</p>${button('Download original data','raw','secondary')}</div>` : ''}
+  const saved = tournament ? `<section class="saved-tournament" aria-label="Your saved tournament"><div><p class="eyebrow">PICK UP WHERE YOU LEFT OFF</p><h2>${escape(tournament.name)}</h2><p>${escape(dateLabel(tournament.date))} · ${tournament.teams.length} ${unit()}${tournament.scheduled ? ` · ${Object.keys(tournament.scores).length} scores saved` : ''}</p></div>${button('Continue tournament →','continue','')}${button('Delete','delete-event','quiet')}</section>` : '';
+  return `${saved}${corrupt ? `<div class="notice recovery-notice"><p>Your original saved data is still here.</p>${button('Download original data','raw','secondary')}${button('Delete unreadable data','delete-event','quiet')}</div>` : ''}
     <section class="hero">
       <div class="hero-copy">
         <h1 id="view-title" tabindex="-1"><span class="headline-line">You bring</span> <span class="headline-line">the people.</span> <span class="headline-line headline-red">We’ll sort</span> <span class="headline-line headline-red">the games.</span></h1>
@@ -136,7 +136,7 @@ function setupView() {
     <div data-formats="rotating_partners king_queen" ${!socialFormat(t)?'hidden':''}><label for="event-rounds">How many rounds?</label><input id="event-rounds" name="rounds" type="number" min="1" max="30" value="${c.rounds}" ${disabled}><p class="hint">Rotating partners: 4–16 people, with balanced rest turns. King / queen: exactly 4 per court, up to 16. Social court counts stay fixed after starting; the ladder also needs a full roster. Court 1 is highest.</p></div>
     <div><label for="event-target">Play each game to</label><select id="event-target" name="target" ${disabled}>${options([11,15,21].map(n=>[n,`${n} points · win by 2`]),t.target)}</select><p class="hint">One game per match. These are casual house rules. Take breaks whenever needed.</p></div>
     ${t.scheduled?'<p class="hint">Format and scoring are locked. Use “Change roster / format” on the roster step to clear the schedule before changing them.</p>':''}
-    <p class="form-error" role="alert" tabindex="-1"></p><div class="form-actions"><button class="button" type="submit">Save & continue →</button>${button('Back to home','home','quiet')}</div>
+    <p class="form-error" role="alert" tabindex="-1"></p><div class="form-actions"><button class="button" type="submit">Save & continue →</button>${button('Back to home','home','quiet')}${button('Delete this tournament','delete-event','quiet')}</div>
   </form></section><aside class="stack">${planner}<div class="panel tint"><h2>A format for your day.</h2><p>Round robin and rotating partners keep people playing. Pools reduce preliminary games. Elimination brackets finish with a championship. The court ladder moves people after every round.</p><p class="hint">Fixed formats: 2–16 singles players or teams. Social formats: 4–16 individuals.</p></div><div class="panel"><h2>Your work stays with you.</h2><p>We save after each completed step and confirmed score. Return in the same browser, on this device. Download a copy to keep a spare.</p></div></aside></div>`;
 }
 function updateFormatFields() {
@@ -260,10 +260,10 @@ function modal(markup) {
   if (!$('#modal').open) $('#modal').showModal();
   ($('#modal').querySelector('[autofocus]') || $('#modal-title'))?.focus();
 }
-function ask(title, message, confirmLabel, dangerous = false) {
+function ask(title, message, confirmLabel, dangerous = false, extra = '') {
   return new Promise(resolve => {
     askResolve = resolve;
-    modal(`<h2 id="modal-title" tabindex="-1">${escape(title)}</h2><p>${escape(message)}</p><div class="button-row">${button(confirmLabel,'accept',dangerous ? 'danger' : '')}${button('Go back','cancel','secondary','autofocus')}</div>`);
+    modal(`<h2 id="modal-title" tabindex="-1">${escape(title)}</h2><p>${escape(message)}</p><div class="button-row">${button(confirmLabel,'accept',dangerous ? 'danger' : '')}${extra}${button('Go back','cancel','secondary','autofocus')}</div>`);
   });
 }
 $('#modal').addEventListener('close', () => {
@@ -416,6 +416,14 @@ async function handleAction(action, node) {
     if (!window.open(`${location.href.split('#')[0]}#board`,'pickleball-board')) throw new Error('Your browser blocked the new window. Allow pop-ups for this page, then try again.');
     return;
   }
+  if (action==='delete-event') {
+    const what = tournament ? `“${tournament.name}”` : 'the unreadable saved data';
+    if (!await ask(`Delete ${what}?`, 'This removes the tournament, its players and every score from this browser. It cannot be undone. Download a copy first if you might want it back.', 'Delete for good', true, tournament ? button('Download a copy first','backup','secondary') : button('Download original data first','raw','secondary'))) return;
+    try { await store.remove(); }
+    catch (error) { if (error instanceof ConflictError) throw error; /* nothing was saved to remove */ }
+    tournament = null; corrupt = false; unsaved = false; stale = false; formDirty = false; problemText = ''; undo = null; view = 'home';
+    render(); announce('Tournament deleted from this browser.'); return;
+  }
   if (action==='contrast') { const on=document.documentElement.dataset.contrast!=='high'; applyContrast(on); try { storage.setItem(contrastKey,on?'1':'0'); } catch { /* not remembered */ } return; }
   if (action==='print-schedule') return print('schedule');
   if (action==='print-results') return print('results');
@@ -429,7 +437,7 @@ document.addEventListener('click', async event => {
   if (!node || node.disabled) return;
   event.preventDefault();
   // Dialog answers must remain usable while the initiating action awaits them.
-  const answer = ['accept','cancel'].includes(node.dataset.action);
+  const answer = ['accept','cancel','backup'].includes(node.dataset.action);
   if (working && !answer) return;
   if (!answer) working=true;
   try { await handleAction(node.dataset.action,node); }

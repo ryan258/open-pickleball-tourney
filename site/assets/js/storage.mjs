@@ -25,5 +25,14 @@ export function createStore(storage, locks, key) {
         expected = source;
       });
     },
+    // Deleting is a write: same lock, same stale-tab refusal, so another tab's newer work is never discarded.
+    async remove() {
+      if (!locks?.request) throw new Error('Automatic saving needs a current browser with secure browser locks, so this saved copy cannot be removed here.');
+      await locks.request(key, () => {
+        if (storage.getItem(key) !== expected) throw new ConflictError('Another tab changed this tournament. Load its saved version before deleting.');
+        storage.removeItem(key);
+        expected = null;
+      });
+    },
   };
 }

@@ -117,3 +117,13 @@ test('simultaneous tabs serialize so exactly one different edit is saved',async(
   assert.equal(outcomes.filter(r=>r.status==='fulfilled').length,1);
   assert(outcomes.find(r=>r.status==='rejected').reason instanceof ConflictError);
 });
+test('deleting removes the saved copy but never another tab\'s newer work',async()=>{
+  let raw=encodeBackup(event()),chain=Promise.resolve();
+  const storage={getItem:()=>raw,setItem:(_key,value)=>{raw=value;},removeItem:()=>{raw=null;}};
+  const locks={request:(_key,fn)=>{const job=chain.then(fn);chain=job.catch(()=>{});return job;}};
+  const a=createStore(storage,locks,'event'),b=createStore(storage,locks,'event');a.read();b.read();
+  await a.save({...event(),name:'Newer'});
+  await assert.rejects(b.remove(),ConflictError); assert.equal(decodeBackup(raw).name,'Newer');
+  b.read(); await b.remove(); assert.equal(raw,null); assert.equal(b.read(),null);
+  await assert.rejects(createStore(storage,null,'event').remove(),/browser/);
+});

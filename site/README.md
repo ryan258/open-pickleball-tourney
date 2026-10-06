@@ -104,6 +104,9 @@ full consolation brackets, timed games and multi-game matches are not included.
 - **Share results.** Results step: opens the phone's share sheet, or copies plain
   text for a group chat. Names are included on purpose; the organizer chooses to
   share.
+- **Delete a tournament.** Home screen or setup step, after a confirmation that
+  offers a backup download first. Deleting uses the same lock and stale-tab check
+  as saving, so another tab's newer work is never discarded.
 - **Undo last score** (this tab only, until the next score or reload), **screen
   stays awake** on the Play step and the board where the browser supports it,
   and a **High contrast** toggle for outdoor glare (remembered per browser).
@@ -239,7 +242,7 @@ node --test site/tests/browser-rules.test.mjs site/tests/formats.test.mjs site/t
 The original nine checks cover round-robin pairing/court packing, stable match
 IDs, score boundaries, standings, withdrawal rules, backup validation, failed
 saving and stale/concurrent writers. Five `desk.test.mjs` checks (late arrivals and departures, the time planner, shareable
-results text and the board model) were added October 6; all 27 checks across the three files passed in Ryan's run. Thirteen additional format checks cover
+results text and the board model) were added October 6; all 28 checks across the three files passed in Ryan's run (including a delete-vs-stale-tab storage check). Thirteen additional format checks cover
 2–16-entry brackets, double-final resets and two-loss invariants, bronze games,
 pools and qualification ties, balanced mixer rests, ladder movement, dependent
 score corrections, frozen playoff seeding, withdrawals and versioned restoration.
