@@ -2,8 +2,8 @@
 
 Hugo builds this static site. The organizer uses a browser on one device.
 No accounts, npm dependencies, external fonts, analytics, API, or cloud database.
-The site is not published yet; it is prepared to publish as a GitHub Pages micro
-site (see "Publishing and updating"). The earlier Django edition is archived in `../django-edition/`.
+The site is live at https://ryan258.github.io/open-pickleball-tourney/ (GitHub
+Pages micro site; see "Publishing and updating"). The earlier Django edition is archived in `../django-edition/`.
 
 ## Visual theme and assets
 
@@ -206,8 +206,8 @@ HTTPS, so it works after the first Pages deploy (or on `localhost`).
 ### Publishing and updating (GitHub Pages)
 
 `.github/workflows/pages.yml` runs the Node tests, builds with the real address
-(`--baseURL` from `actions/configure-pages`) and deploys `site/public`. It has
-never run. To go live, Ryan enables Pages once (repository Settings → Pages →
+(`--baseURL` from `actions/configure-pages`) and deploys `site/public`. It deployed
+successfully October 6 and October 19. Pages is enabled; the one-time setup was: enable Pages once (repository Settings → Pages →
 Source: GitHub Actions); after that, a change under `site/` reaching `main`
 publishes automatically, and Actions → Run workflow republishes by hand. The
 address will be `https://ryan258.github.io/open-pickleball-tourney/`. The

@@ -31,6 +31,6 @@ Added October 18–19:
 
 Next: Ryan's review of the local UI with a realistic event; real tablet,
 keyboard/voice/screen-reader and physical print checks; choose a stable public
-address and enable Pages when ready (`pages.yml` is prepared but has never run; a project
+address (Pages is enabled and `pages.yml` has deployed successfully on Oct 6 and Oct 19; a project
 site's address is `https://ryan258.github.io/open-pickleball-tourney/`). No hosting changes,
 remote services, accounts, payments, or shared writers were added.
