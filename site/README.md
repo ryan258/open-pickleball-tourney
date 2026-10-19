@@ -3,7 +3,7 @@
 Hugo builds this static site. The organizer uses a browser on one device.
 No accounts, npm dependencies, external fonts, analytics, API, or cloud database.
 The site is not published yet; it is prepared to publish as a GitHub Pages micro
-site (see "Publishing and updating"). The earlier Django edition is intact.
+site (see "Publishing and updating"). The earlier Django edition is archived in `../django-edition/`.
 
 ## Visual theme and assets
 
@@ -24,6 +24,21 @@ See [ART-DIRECTION.md](ART-DIRECTION.md) for the generation prompts and asset
 provenance. The bundled font's license is in `static/licenses/Anton-OFL.txt`.
 
 ## Organizer workflow
+
+**Quick start (home screen).** One screen for an impromptu day: how people play
+(partners rotate, fixed teams, singles), a pasted list of names, courts, time
+available and game target. It lists the formats that fit that headcount and
+time, suggests one, and **Start playing** makes the schedule and opens the
+games. The step-by-step setup below is still there ("Prefer step-by-step
+setup?") for pools, brackets and seed order. Quick start answers are kept if
+you leave and come back, and cleared when a tournament starts.
+
+**Phone layout (760 px and narrower).** The Set up / Add / Play / Results bar
+sits at the bottom within thumb reach; dialogs rise from the bottom as sheets;
+score entry has large − / + buttons and a one-tap "Game 11" fill beside each
+side (typing still works); Quick start's Start button stays pinned at the
+bottom. Checked in a Chromium phone viewport (375 × 812) only, not on a real
+phone.
 
 1. Name the event and choose a format, court count and game target. Every match
    is one game to 11, 15 or 21, win by two. These are casual house rules.
@@ -58,7 +73,7 @@ provenance. The bundled font's license is in `static/licenses/Anton-OFL.txt`.
 | Pool play → playoffs | 2 or 4 pools; at least two entries per pool, up to 16 total | Snake-seeded round robins; top two active entries per pool. Cross-pool first-round opponents. Unequal pools keep separate standings. |
 | Single elimination | 2–16 fixed entries; 1–8 courts | One loss ends championship contention. Optional bronze game for semifinal losers; no full consolation bracket. |
 | Double elimination | 2–16 fixed entries; 1–8 courts | Upper and lower brackets. Two losses eliminate an entry; reset final if the lower finalist wins the first final. Withdrawals end participation without inventing a score. |
-| Rotating partners | 4–16 individuals; 1–8 available courts; 1–30 rounds | Full doubles courts, balanced appearances, fewer repeat partners/opponents. Not a complete partnership round robin. Individual places use win percentage, average point margin, then average points scored. |
+| Rotating partners | 4–16 individuals; 1–8 available courts; 1–30 rounds | Full doubles courts, balanced appearances, fewest repeat partners then opponents (searched each round). Eight people on two courts for seven rounds partner everyone exactly once. Not a guaranteed partnership round robin. Individual places use win percentage, average point margin, then average points scored. |
 | King / queen of the court | 4, 8, 12 or 16 individuals; exactly four per selected court; 1–30 rounds | Court 1 is highest. Winners move up, losers down; top winners/bottom losers stay. Partners split. Last-round court and outcome determine shared finishing places. |
 
 Single-elimination playoffs can include a bronze game; without it semifinal
@@ -139,8 +154,8 @@ full consolation brackets, timed games and multi-game matches are not included.
 - Round-robin copies use version 1. Other formats use version 2 so older apps
   reject them instead of misreading them. This app reads both; existing version 1
   records need no manual migration. The browser storage key stays unchanged.
-- Browser backups and Django archives are separate formats. No migration between
-  them is implemented.
+- Browser backups and the archived Django edition's archives are separate
+  formats. No migration between them is implemented.
 
 ## Maintainer preview and build
 
@@ -219,11 +234,11 @@ event, saving, ID fallback). **Not verified:** opening from a `file://` double-c
 (the in-app browser cannot open file pages); check it in Chrome, Safari and
 Firefox before telling organizers it works everywhere.
 
-For a local static-build/offline preview (the existing Python environment is a
-maintainer convenience, not part of the delivered static site):
+For a local static-build/offline preview (Python is a maintainer convenience,
+not part of the delivered static site):
 
 ```sh
-.venv/bin/python -m http.server 8765 --bind 127.0.0.1 --directory site/public
+python3 -m http.server 8765 --bind 127.0.0.1 --directory site/public
 ```
 
 Open http://127.0.0.1:8765/. Wait for **Ready to reopen offline in this browser**.
