@@ -64,3 +64,15 @@ test('results text and the board model describe the same event', () => {
   assert.equal(board.now[0].socialRound, 2);
   assert(board.next.every(m => m.group === board.next[0].group && m.group > board.now[0].group));
 });
+
+test('a reset or reused rotating event forgets arrivals and departures, so the format can change', () => {
+  let t = reviseTournament(scoreRounds(mixer(), [1]), { type: 'leave', id: 't1', after: 2 }).tournament;
+  assert.deepEqual(t.windows, { t1: [1, 2] });
+  const reset = validateTournament({ ...t, scheduled: false, scores: {}, scoreSides: {}, withdrawn: [] });
+  assert.equal(reset.windows, undefined);
+  const switched = validateTournament({ ...reset, competition: { type: 'single_elimination', pools: 2, advance: 4, rounds: 6, bronze: false } });
+  assert.equal(switched.windows, undefined);
+  const again = validateTournament({ ...reset, scheduled: true });
+  const rounds = new Set(competitionState(again).matches.filter(m => [...m.a, ...m.b].includes('t1')).map(m => m.socialRound));
+  assert(rounds.has(6));
+});

@@ -125,5 +125,15 @@ test('deleting removes the saved copy but never another tab\'s newer work',async
   await a.save({...event(),name:'Newer'});
   await assert.rejects(b.remove(),ConflictError); assert.equal(decodeBackup(raw).name,'Newer');
   b.read(); await b.remove(); assert.equal(raw,null); assert.equal(b.read(),null);
-  await assert.rejects(createStore(storage,null,'event').remove(),/browser/);
+  // Without browser locks: an absent record is already gone, a present one cannot be removed here.
+  await createStore(storage,null,'event').remove();
+  raw=encodeBackup(event());
+  await assert.rejects(createStore(storage,null,'event').remove(),/browser/); assert.equal(decodeBackup(raw).name,'Saturday');
+});
+test('a delete the browser silently ignores is reported, not claimed',async()=>{
+  const raw=encodeBackup(event()), chain=Promise.resolve();
+  const storage={getItem:()=>raw,setItem:()=>{},removeItem:()=>{}}; // removeItem does nothing
+  const locks={request:(_key,fn)=>chain.then(fn)};
+  const store=createStore(storage,locks,'event'); store.read();
+  await assert.rejects(store.remove(),/still saved/);
 });

@@ -125,7 +125,8 @@ export function validateTournament(input) {
     if (!tournament.scheduled && Object.keys(tournament.advancement).length) fail('Playoff selection needs a completed preliminary stage.');
     if (!Object.keys(tournament.advancement).length && tournament.qualifyingWithdrawn.length) fail('Qualification withdrawals need a confirmed playoff order.');
   }
-  if (input.windows !== undefined) {
+  // Arrival/departure rounds describe a started event; a reset or reused event starts clean.
+  if (input.windows !== undefined && input.scheduled) {
     if (formatType(tournament) !== 'rotating_partners' || !record(input.windows)) fail('Arrival and departure rounds apply only to rotating partners.');
     const rounds = tournament.competition.rounds, windows = {};
     for (const [person, w] of Object.entries(input.windows)) {
@@ -135,7 +136,7 @@ export function validateTournament(input) {
     }
     if (Object.keys(windows).length) {
       tournament.windows = windows;
-      for (let round = 1; tournament.scheduled && round <= rounds; round++) {
+      for (let round = 1; round <= rounds; round++) {
         if (tournament.teams.filter(team => present(tournament, team.id, round)).length < 4) fail(`Rotating partners needs at least four people in round ${round}.`);
       }
     }

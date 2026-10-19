@@ -78,6 +78,99 @@ function seedSlots(seeds) {
   return order.map(seed => seeds[seed - 1] ? [seeds[seed - 1]] : []);
 }
 
+// Rotating partners. Who plays each round is decided by appearances (so rests stay level), then the
+// partners and opponents are searched for the fewest repeats. The plan depends only on the roster,
+// courts, rounds and arrival/departure windows, never on scores, so it is cached.
+const planCache = new Map();
+const PARTNER_WEIGHT = 3;
+export function rotatingPlan(t) {
+  const key = JSON.stringify([t.teams.map(team => team.id), t.courts, t.competition.rounds, t.windows ?? null]);
+  if (!planCache.has(key)) {
+    planCache.set(key, planRotation(t));
+    if (planCache.size > 8) planCache.delete(planCache.keys().next().value);
+  }
+  return planCache.get(key).map(games => games.map(([a, b]) => [[...a], [...b]]));
+}
+function planRotation(t) {
+  const ids = t.teams.map(team => team.id), size = ids.length, index = new Map(ids.map((id, i) => [id, i]));
+  const appearances = new Map(ids.map(id => [id, 0])), seen = new Set(), plan = [];
+  let sat = new Set(); // person numbers who sat out the previous round
+  // Repeat counts live in flat arrays by person number; the search below calls cost() thousands of times.
+  const partners = new Uint8Array(size * size), opponents = new Uint8Array(size * size);
+  const at = (a, b) => (a < b ? a * size + b : b * size + a);
+  // Four slots per court: [0,1] against [2,3]. Each earlier meeting adds to the cost, so a third
+  // meeting is felt more than two first meetings.
+  const cost = slots => {
+    let partner = 0, opposed = 0;
+    for (let i = 0; i < slots.length; i += 4) {
+      const a = slots[i], b = slots[i + 1], c = slots[i + 2], d = slots[i + 3];
+      partner += partners[at(a, b)] + partners[at(c, d)];
+      opposed += opponents[at(a, c)] + opponents[at(a, d)] + opponents[at(b, c)] + opponents[at(b, d)];
+    }
+    return partner * PARTNER_WEIGHT + opposed;
+  };
+  // Swap-only descent, always in the same order, so the same roster gives the same plan.
+  // owed: people who must keep a court; only the others may be swapped for a bench player.
+  const improve = (slots, bench, owed) => {
+    let best = cost(slots), moved = true;
+    while (moved) {
+      moved = false;
+      for (let i = 0; i < slots.length; i++) {
+        for (let j = i + 1; j < slots.length; j++) {
+          if (i >> 1 === j >> 1) continue;
+          [slots[i], slots[j]] = [slots[j], slots[i]];
+          const next = cost(slots);
+          if (next < best) { best = next; moved = true; } else [slots[i], slots[j]] = [slots[j], slots[i]];
+        }
+        for (let k = 0; k < bench.length && !owed.has(slots[i]); k++) {
+          [slots[i], bench[k]] = [bench[k], slots[i]];
+          const next = cost(slots);
+          if (next < best) { best = next; moved = true; } else [slots[i], bench[k]] = [bench[k], slots[i]];
+        }
+      }
+    }
+    return best;
+  };
+  for (let round = 1; round <= t.competition.rounds; round++) {
+    const live = t.teams.filter(team => present(t, team.id, round));
+    const count = Math.min(t.courts, Math.floor(live.length / 4));
+    // A newcomer starts level with the least-played person, not owed every missed game.
+    const veterans = live.filter(team => seen.has(team.id)), least = veterans.length ? Math.min(...veterans.map(team => appearances.get(team.id))) : 0;
+    for (const team of live) { if (!seen.has(team.id) && round > 1) appearances.set(team.id, least); seen.add(team.id); }
+    const ranked = live.map((team, i) => ({ id: team.id, order: (i + live.length - (round - 1) % live.length) % live.length }))
+      .sort((a, b) => appearances.get(a.id) - appearances.get(b.id) || a.order - b.order).map(row => row.id);
+    const need = count * 4;
+    // Everyone owed a game plays. Among people level at the cutoff, the search may choose who sits.
+    const cutoff = need ? appearances.get(ranked[need - 1]) : 0;
+    // Among those level at the cutoff, whoever sat last round plays now, so nobody rests twice running
+    // while an equally owed player has just played.
+    const behind = ranked.filter(id => appearances.get(id) < cutoff).map(id => index.get(id)), level = ranked.filter(id => appearances.get(id) === cutoff).map(id => index.get(id));
+    // Only when they all fit; with a bench bigger than the courts the search keeps its free choice.
+    const rested = level.filter(i => sat.has(i)), fits = behind.length + rested.length <= need;
+    const owed = fits ? [...behind, ...rested] : behind, pool = fits ? level.filter(i => !sat.has(i)) : level;
+    const slots = [...owed, ...pool.slice(0, need - owed.length)], bench = pool.slice(need - owed.length);
+    let best = null, bestCost = Infinity;
+    // A few deterministic starting orders; descent alone can stall on a poor first arrangement.
+    const turn = (list, by) => [...list.slice(by % (list.length || 1)), ...list.slice(0, by % (list.length || 1))];
+    for (let start = 0; start < Math.min(4, Math.max(1, need / 4)); start++) {
+      const trial = [...turn(slots.slice(0, owed.length), start), ...turn(slots.slice(owed.length), start)], spare = [...bench];
+      const trialCost = improve(trial, spare, new Set(owed));
+      if (trialCost < bestCost) { best = trial; bestCost = trialCost; }
+    }
+    const games = [];
+    for (let i = 0; i < need; i += 4) {
+      const [a, b, c, d] = best.slice(i, i + 4);
+      games.push([[ids[a], ids[b]], [ids[c], ids[d]]]);
+      partners[at(a, b)]++; partners[at(c, d)]++;
+      for (const x of [a, b]) for (const y of [c, d]) opponents[at(x, y)]++;
+    }
+    for (const i of best) appearances.set(ids[i], appearances.get(ids[i]) + 1);
+    sat = new Set(live.map(team => index.get(team.id)).filter(i => !best.includes(i)));
+    plan.push(games);
+  }
+  return plan;
+}
+
 export function buildCompetition(t, roundRobin) {
   const type = formatType(t), matches = [], byId = new Map(), places = Object.create(null), groups = [];
   let nextGroup = 1, champion = [], finished = false, needsAdvancement = false, advancementValid = true;
@@ -200,38 +293,7 @@ export function buildCompetition(t, roundRobin) {
     }
   }
   if (type === 'rotating_partners') {
-    const appearances = new Map(t.teams.map(team => [team.id, 0])), partners = new Map(), opponents = new Map();
-    const pairKey = (a, b) => [a, b].sort().join('|');
-    const cost = (map, a, b) => map.get(pairKey(a, b)) || 0;
-    const note = (map, a, b) => map.set(pairKey(a, b), cost(map, a, b) + 1);
-    // Late arrivals and early leavers: t.windows[id] = [first round, last round | null].
-    // A round is built only from the people present in it, so rounds before a
-    // change keep their exact pairings and saved scores stay valid.
-    const seen = new Set();
-    for (let round = 1; round <= t.competition.rounds; round++) {
-      const live = t.teams.filter(team => present(t, team.id, round));
-      const count = Math.min(t.courts, Math.floor(live.length / 4));
-      // A newcomer starts level with the least-played person, not owed every missed game.
-      const veterans = live.filter(team => seen.has(team.id)), least = veterans.length ? Math.min(...veterans.map(team => appearances.get(team.id))) : 0;
-      for (const team of live) { if (!seen.has(team.id) && round > 1) appearances.set(team.id, least); seen.add(team.id); }
-      const candidates = live.map((team, i) => ({ id: team.id, order: (i + live.length - (round - 1) % live.length) % live.length }));
-      candidates.sort((a, b) => appearances.get(a.id) - appearances.get(b.id) || a.order - b.order);
-      const selected = candidates.slice(0, count * 4).map(row => row.id), pairs = [];
-      for (const id of selected) appearances.set(id, appearances.get(id) + 1);
-      while (selected.length) {
-        const a = selected.shift();
-        selected.sort((b, c) => cost(partners, a, b) - cost(partners, a, c));
-        const b = selected.shift(); pairs.push([a, b]); note(partners, a, b);
-      }
-      const games = [];
-      while (pairs.length) {
-        const a = pairs.shift(), opposition = b => a.reduce((sum, x) => sum + b.reduce((n, y) => n + cost(opponents, x, y), 0), 0);
-        pairs.sort((b, c) => opposition(b) - opposition(c));
-        const b = pairs.shift(); games.push([a, b]);
-        for (const x of a) for (const y of b) note(opponents, x, y);
-      }
-      stage(`Mixer round ${round}`, games, `mix${round}`, { socialRound: round });
-    }
+    rotatingPlan(t).forEach((games, i) => stage(`Mixer round ${i + 1}`, games, `mix${i + 1}`, { socialRound: i + 1 }));
     finished = matches.every(m => m.done);
   }
   if (type === 'king_queen') {

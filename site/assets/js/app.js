@@ -9,6 +9,8 @@ const uuid = () => crypto.randomUUID?.() ?? [...crypto.getRandomValues(new Uint8
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const dateLabel = value => new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { month:'long', day:'numeric', year:'numeric' });
 const button = (label, action, classes = 'secondary', attrs = '') => `<button class="button ${classes}" data-action="${action}" ${attrs}>${label}</button>`;
+// A big - / number / + control. Typing still works; the buttons are for thumbs.
+const stepper = (id, name, value, min, max, label) => `<div class="stepper">${button('−','bump','secondary stepper-btn',`data-target="${id}" data-delta="-1" aria-label="Fewer ${label}"`)}<input id="${id}" name="${name}" type="number" inputmode="numeric" min="${min}" max="${max}" step="1" placeholder="0" value="${value}" required>${button('+','bump','secondary stepper-btn',`data-target="${id}" data-delta="1" aria-label="More ${label}"`)}</div>`;
 const unit = () => tournament?.mode === 'singles' ? 'players' : 'teams';
 const scope = location.pathname.replace(/index\.html$/, '').replace(/\/$/, '') || '/';
 const key = `open-pickleball-browser:v1:${scope}`;
@@ -21,6 +23,9 @@ const store = createStore(storage, locks, key);
 let tournament = null, view = location.hash === '#board' ? 'board' : 'home', unsaved = false, corrupt = false, stale = false, formDirty = false;
 let pendingScore = null, pendingImport = null, askResolve = null, working = false, problemText = '';
 let undo = null, planRows = [], wake = null, boardRaw = null;
+// Quick start keeps its answers while the organizer wanders off, and forgets them once a tournament starts.
+const quickDefaults = () => ({ who:'rotate', names:'', courts:2, touched:false, minutes:90, target:11, pick:null });
+let quick = quickDefaults(), quickRows = [];
 
 try { tournament = store.read(); } catch (error) { corrupt = Boolean(store.raw()); problemText = corrupt ? 'The saved tournament could not be opened. Download the original data below before replacing it, or open a good saved copy.' : 'This browser is blocking automatic saving. You can work here and use Download a copy to keep your tournament.'; }
 
@@ -60,7 +65,7 @@ async function commit(next) {
   status();
 }
 async function change(edit) { const next = structuredClone(tournament); edit(next); await commit(next); }
-function options(values, selected) { return values.map(([value,label]) => `<option value="${value}" ${value === selected ? 'selected' : ''}>${label}</option>`).join(''); }
+function options(values, selected) { return values.map(([value,label]) => `<option value="${escape(value)}" ${value === selected ? 'selected' : ''}>${escape(label)}</option>`).join(''); }
 function heading(kicker, title, subtitle = '', actions = '') {
   return `<div class="page-heading"><div><p class="eyebrow">${kicker}</p><h1 tabindex="-1" id="view-title">${escape(title)}</h1>${subtitle ? `<p class="muted">${subtitle}</p>` : ''}</div>${actions ? `<div class="button-row">${actions}</div>` : ''}</div>`;
 }
@@ -70,15 +75,16 @@ function render(focus = true) {
   document.body.dataset.screen = view;
   const openSummaries = new Set([...document.querySelectorAll('#main details[open] summary')].map(s => s.textContent.trim()));
   const nav = $('#steps');
-  nav.hidden = view === 'home' || view === 'board' || !tournament;
+  nav.hidden = ['home','board','quick'].includes(view) || !tournament;
   nav.innerHTML = ['setup','teams','play','results'].map((step,index) => `<button data-action="navigate" data-view="${step}" ${view === step ? 'aria-current="step"' : ''} ${!tournament && index ? 'disabled' : ''}><span class="step-number">${index+1}</span>${['Set up','Add '+unit(),'Play','Results'][index]}</button>`).join('');
-  $('#main').innerHTML = ({ home: homeView, setup: setupView, teams: teamsView, play: playView, results: resultsView, board: boardView })[view]();
+  $('#main').innerHTML = ({ home: homeView, setup: setupView, teams: teamsView, play: playView, results: resultsView, board: boardView, quick: quickView })[view]();
   for (const details of document.querySelectorAll('#main details')) {
     const summary = details.querySelector('summary')?.textContent.trim();
     if (summary && openSummaries.has(summary)) details.open = true;
   }
   status();
   if (view === 'setup') renderPlan();
+  if (view === 'quick') renderQuick();
   keepAwake();
   document.title = tournament && view !== 'home' ? `${tournament.name} · Open Pickleball Tourney` : 'Open Pickleball Tourney';
   if (focus) {
@@ -101,9 +107,9 @@ function homeView() {
       <div class="hero-copy">
         <h1 id="view-title" tabindex="-1"><span class="headline-line">You bring</span> <span class="headline-line">the people.</span> <span class="headline-line headline-red">We’ll sort</span> <span class="headline-line headline-red">the games.</span></h1>
         <p class="lead">A little less paperwork. A lot more play.<br>Run your neighborhood pickleball tournament, one easy step at a time.</p>
-        <div class="hero-actions">${button('Start a tournament →','new','')}${button('Try a practice tournament','sample','secondary')}</div>
+        <div class="hero-actions">${button('Quick start →','quick','')}${button('Try a practice tournament','sample','secondary')}</div>
         <div class="practice-picker"><label for="practice-format">Practice format</label><select id="practice-format" aria-label="Practice format">${options(FORMAT_OPTIONS.map(([id,label])=>[id,label]),'round_robin')}</select></div>
-        <p class="hero-note">No account needed. Your tournament stays on this device.</p>
+        <p class="hero-note">No account needed. Your tournament stays on this device. ${button('Prefer step-by-step setup?','new','quiet small')}</p>
       </div>
       <div class="hero-artwork" aria-hidden="true"><img src="${escape(document.body.dataset.poster)}" alt="" width="1448" height="1086" fetchpriority="high"></div>
       <div class="scoreboard" aria-label="An example match card, not a live tournament">
@@ -120,6 +126,44 @@ function homeView() {
       <div class="workflow-item"><span class="step-number">3</span><div><h3>Make it a<br>regular thing.</h3><p>Print the results and use your setup again next time.</p></div></div>
       <img class="community-art" src="${escape(document.body.dataset.community)}" alt="" width="600" height="300" loading="lazy">
     </section>`;
+}
+function quickView() {
+  const pick = (name, value, label, hint = '') => `<label class="choice"><input type="radio" name="${name}" value="${value}" ${String(quick[name]) === String(value) ? 'checked' : ''}><span>${label}${hint ? `<small>${hint}</small>` : ''}</span></label>`;
+  return `${heading('QUICK START', 'Who’s playing today?', 'Paste the names, say how long you have, and go.', button('Back','home','quiet small'))}<form data-form="quick" class="panel form-grid quick">
+    <fieldset><legend>How do people play?</legend><div class="choice-row">${pick('who','rotate','Partners rotate','Mix it up')}${pick('who','teams','Fixed teams','Pat and Lee')}${pick('who','singles','Singles','One on one')}</div></fieldset>
+    <div><label for="quick-names"><span id="quick-label">Players, one per line</span> <span class="badge neutral" id="quick-count">0 players</span></label><textarea id="quick-names" name="names" maxlength="4000" autocomplete="off" autocapitalize="words" aria-describedby="quick-hint">${escape(quick.names)}</textarea><p class="hint" id="quick-hint"></p></div>
+    <div class="grid-two"><div><label for="quick-courts">Courts</label>${stepper('quick-courts','courts',quick.courts,1,8,'courts')}</div><fieldset><legend>Time you have</legend><div class="choice-row compact">${[60,90,120,180].map(m => pick('minutes', m, `${m / 60 >= 2 ? m / 60 + ' h' : m + ' min'}`)).join('')}</div></fieldset></div>
+    <fieldset><legend>Play each game to</legend><div class="choice-row compact">${[11,15,21].map(n => pick('target', n, String(n))).join('')}</div></fieldset>
+    <div id="quick-plan" aria-live="polite"></div>
+    <p class="form-error" role="alert" tabindex="-1"></p>
+    <div class="form-actions sticky-actions"><button class="button big" type="submit">Start playing →</button></div>
+  </form>`;
+}
+const quickLines = () => quick.names.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+function readQuick(changed) {
+  const data = new FormData($('[data-form="quick"]'));
+  quick.who = data.get('who') || quick.who;
+  quick.names = String(data.get('names') ?? '');
+  if (changed?.name === 'courts') quick.touched = true;
+  quick.courts = Math.min(8, Math.max(1, Math.round(Number(data.get('courts'))) || 1));
+  quick.minutes = Number(data.get('minutes')) || quick.minutes;
+  quick.target = Number(data.get('target')) || quick.target;
+  quick.pick = data.get('pick') || quick.pick;
+}
+function renderQuick() {
+  const n = quickLines().length, rotate = quick.who === 'rotate', teams = quick.who === 'teams';
+  $('#quick-label').textContent = teams ? 'Teams, one per line' : 'Players, one per line';
+  $('#quick-count').textContent = `${n} ${teams ? (n === 1 ? 'team' : 'teams') : (n === 1 ? 'player' : 'players')}`;
+  $('#quick-hint').textContent = teams ? 'Put “and”, “&” or “/” between partners, like Pat and Lee.' : 'First names are fine. Add an initial if two people share a name.';
+  $('#quick-names').placeholder = teams ? 'Pat and Lee\nJo and Sam' : 'Pat\nLee\nJo\nSam';
+  if (!quick.touched) quick.courts = Math.min(2, Math.max(1, Math.floor(n / (rotate ? 4 : 2))));
+  $('#quick-courts').value = quick.courts;
+  const box = $('#quick-plan');
+  if (n > 16) { quickRows = []; box.innerHTML = '<p class="hint">That is more than 16. Remove a few names.</p>'; return; }
+  if (n < (rotate ? 4 : 2)) { quickRows = []; box.innerHTML = `<p class="hint">${rotate ? 'Partners rotate needs at least four people.' : 'Add at least two to see formats that fit.'}</p>`; return; }
+  quickRows = planFormats({ entries: n, courts: quick.courts, minutes: quick.minutes, perGame: GAME_MINUTES[quick.target], individuals: rotate });
+  if (!quickRows.some(row => row.type === quick.pick)) quick.pick = (quickRows.find(row => row.suggested) ?? quickRows[0])?.type ?? null;
+  box.innerHTML = quickRows.length ? `<fieldset><legend>Suggested format</legend><div class="plan-list">${quickRows.map(row => `<label class="pick"><input type="radio" name="pick" value="${row.type}" ${row.type === quick.pick ? 'checked' : ''}><span><strong>${escape(row.label)}</strong>${row.suggested ? ` <span class="badge">${row.fits ? 'SUGGESTED' : 'FASTEST'}</span>` : ''}<span class="hint">About ${hoursText(row.minutes)} · ${row.fits ? 'fits your time' : 'longer than your time'} · ${escape(row.detail)}</span></span></label>`).join('')}</div></fieldset>` : '<p class="hint">No format fits this many people on these courts. Try more courts.</p>';
 }
 function setupView() {
   const t = tournament, type = formatType(t), c = t.competition || { pools:2, advance:4, rounds:6, bronze:false };
@@ -276,7 +320,7 @@ function scoreDialog(matchId, draft = null) {
   if (!match || !['ready','scored'].includes(match.status)) throw new Error('That game is not ready for a score.');
   const saved=match.score, scores=draft||saved||['',''];
   pendingScore={match,a:sideName(tournament,match,'a'),b:sideName(tournament,match,'b'),scores:null};
-  modal(`<h2 id="modal-title" tabindex="-1">${saved?'Correct the score':'How did the game go?'}</h2><p class="hint">Court ${match.court} · ${escape(match.label)} · to ${tournament.target}, win by 2</p><form data-form="score"><div class="score-inputs"><div><label for="score-a">${escape(pendingScore.a)}</label><input id="score-a" name="a" type="number" inputmode="numeric" min="0" max="999" step="1" required value="${scores[0]}" autofocus></div><div><label for="score-b">${escape(pendingScore.b)}</label><input id="score-b" name="b" type="number" inputmode="numeric" min="0" max="999" step="1" required value="${scores[1]}"></div></div><p class="form-error" role="alert" tabindex="-1"></p><div class="form-actions"><button class="button" type="submit">Review score →</button>${button('Cancel','cancel','secondary')}${saved?button('Clear this score','clear-score','quiet small'):''}</div></form>`);
+  modal(`<h2 id="modal-title" tabindex="-1">${saved?'Correct the score':'How did the game go?'}</h2><p class="hint">Court ${match.court} · ${escape(match.label)} · to ${tournament.target}, win by 2</p><form data-form="score"><div class="score-inputs">${['a','b'].map((side, i) => `<div class="score-pad"><label for="score-${side}">${escape(pendingScore[side])}</label>${stepper(`score-${side}`, side, scores[i], 0, 999, `points for ${escape(pendingScore[side])}`)}${button(`Game ${tournament.target}`, 'fill', 'secondary small', `data-target="score-${side}" data-value="${tournament.target}" aria-label="Set ${escape(pendingScore[side])} to ${tournament.target}"`)}</div>`).join('')}</div><p class="form-error" role="alert" tabindex="-1"></p><div class="form-actions"><button class="button" type="submit">Review score →</button>${button('Cancel','cancel','secondary')}${saved?button('Clear this score','clear-score','quiet small'):''}</div></form>`);
 }
 function changeConsequences(plan) {
   const matches=competitionState(tournament).matches;
@@ -312,6 +356,13 @@ async function handleAction(action, node) {
   if (action==='accept') { const resolve = askResolve; askResolve=null; $('#modal').close(); resolve?.(true); return; }
   if (action==='cancel') { $('#modal').close(); return; }
   if (action==='home') return navigate('home');
+  if (action==='quick') return navigate('quick');
+  if (action==='bump' || action==='fill') {
+    const field = document.getElementById(node.dataset.target); if (!field) return;
+    const low = Number(field.min || 0), high = Number(field.max || 999);
+    field.value = action==='fill' ? node.dataset.value : Math.min(high, Math.max(low, (Number(field.value) || 0) + Number(node.dataset.delta)));
+    field.dispatchEvent(new Event('input', { bubbles:true })); return;
+  }
   if (action==='navigate') return navigate(node.dataset.view);
   if (action.startsWith('go-')) return navigate(action.slice(3));
   if (action==='continue') return navigate(tournament.scheduled ? 'play' : tournament.teams.length ? 'teams' : 'setup');
@@ -419,8 +470,9 @@ async function handleAction(action, node) {
   if (action==='delete-event') {
     const what = tournament ? `“${tournament.name}”` : 'the unreadable saved data';
     if (!await ask(`Delete ${what}?`, 'This removes the tournament, its players and every score from this browser. It cannot be undone. Download a copy first if you might want it back.', 'Delete for good', true, tournament ? button('Download a copy first','backup','secondary') : button('Download original data first','raw','secondary'))) return;
+    // Any failure leaves the tournament on screen: it is only "deleted" once the record is really gone.
     try { await store.remove(); }
-    catch (error) { if (error instanceof ConflictError) throw error; /* nothing was saved to remove */ }
+    catch (error) { if (error instanceof ConflictError) { stale = true; status(); } throw error; }
     tournament = null; corrupt = false; unsaved = false; stale = false; formDirty = false; problemText = ''; undo = null; view = 'home';
     render(); announce('Tournament deleted from this browser.'); return;
   }
@@ -479,6 +531,18 @@ document.addEventListener('submit', async event => {
       await commit(next);
       view = tournament?.scheduled ? 'play' : 'teams'; render(); announce(unsaved ? 'Details kept in this tab. Download a copy.' : 'Tournament details saved.');
     }
+    if (form.dataset.form==='quick') {
+      readQuick();
+      const row = quickRows.find(r => r.type === quick.pick);
+      if (!row) throw new Error(quickLines().length ? 'Add more names, or pick a format that fits.' : 'Add the names first.');
+      const mode = quick.who==='teams' ? 'doubles' : 'singles', { type, courts, ...rest } = row.settings;
+      const teams = parseRoster(quick.names, mode, uuid);
+      const day = new Date().toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
+      const next = { id:uuid(), name:`Pickleball · ${day}`, date:today(), venue:'', mode, courts:courts ?? quick.courts, target:quick.target, teams, scheduled:true, withdrawn:[], scores:{}, competition:{ pools:2, advance:4, rounds:6, bronze:false, ...rest, type } };
+      validateTournament(next);
+      if ((tournament || corrupt) && !await ask('Start this tournament?', 'This replaces the tournament saved in this browser. Go back and download a copy first if you want to keep it.', 'Start this tournament', true)) return;
+      await commit(next); quick = quickDefaults(); view = 'play'; render(); announce('Your tournament is ready. First games are on the courts.');
+    }
     if (form.dataset.form==='team' || form.dataset.form==='bulk') {
       if (tournament.scheduled) throw new Error('Reset the schedule before changing the roster.');
       const teams = form.dataset.form==='bulk' ? parseRoster(data.get('roster'),tournament.mode,uuid) : [{id:uuid(),players:tournament.mode==='doubles'?[data.get('one'),data.get('two')]:[data.get('one')]}];
@@ -507,7 +571,11 @@ document.addEventListener('submit', async event => {
   finally { working=false; }
 });
 
-$('#main').addEventListener('input', event => { if (event.target.closest('#planner')) return renderPlan(); if (event.target.closest('form')) formDirty=true; });
+$('#main').addEventListener('input', event => {
+  if (event.target.closest('#planner')) return renderPlan();
+  if (event.target.closest('[data-form="quick"]')) { formDirty = true; readQuick(event.target); if (event.target.name !== 'pick') renderQuick(); return; }
+  if (event.target.closest('form')) formDirty=true;
+});
 $('#main').addEventListener('change', event => {
   if (event.target.closest('#planner')) return renderPlan();
   if (event.target.closest('form')) formDirty=true;

@@ -122,6 +122,37 @@ test('rotating partners: 4–16 individuals, balanced rests, no player/court cla
   assert(rows.every(r=>r.played===3)); assert.equal(rows.reduce((n,r)=>n+r.for,0),3*18*2);
 });
 
+test('rotating partners: level rests, as few repeat partners as the numbers allow, and the same plan every time',()=>{
+  for(let n=4;n<=16;n++) for(const courts of new Set([1,Math.floor(n/4)])) for(const rounds of [6,n-1]) {
+    const t=validateTournament({...event('rotating_partners',n,{rounds}),courts}), matches=competitionState(t).matches;
+    const partners=new Map(), played=new Map(t.teams.map(x=>[x.id,0]));
+    for(const m of matches) { for(const side of [m.a,m.b]) { const key=side.toSorted().join('/'); partners.set(key,(partners.get(key)||0)+1); } for(const id of [...m.a,...m.b]) played.set(id,played.get(id)+1); }
+    const slots=matches.length*2, unavoidable=Math.max(0,slots-n*(n-1)/2), repeats=slots-partners.size;
+    assert(Math.max(...played.values())-Math.min(...played.values())<=1,`rests level for ${n} players, ${courts} courts, ${rounds} rounds`);
+    assert(repeats-unavoidable<=2,`repeat partners for ${n} players, ${courts} courts, ${rounds} rounds: ${repeats-unavoidable} avoidable`);
+    assert.equal(JSON.stringify(competitionState(t).matches.map(m=>[m.id,m.a,m.b])),JSON.stringify(matches.map(m=>[m.id,m.a,m.b])));
+  }
+  // Eight people, seven rounds, two courts: everyone partners everyone exactly once.
+  const eight=validateTournament({...event('rotating_partners',8,{rounds:7}),courts:2}), seen=new Set();
+  for(const m of competitionState(eight).matches) for(const side of [m.a,m.b]) { const key=side.toSorted().join('/'); assert(!seen.has(key),`${key} partnered twice`); seen.add(key); }
+  assert.equal(seen.size,28);
+});
+
+test('rotating partners: nobody sits out two rounds running when the bench is no larger than the courts',()=>{
+  for(let n=5;n<=16;n++) for(const courts of new Set([1,Math.floor(n/4)])) {
+    const need=Math.min(courts,Math.floor(n/4))*4;
+    if(n-need>need) continue;
+    const t=validateTournament({...event('rotating_partners',n,{rounds:n-1}),courts}), byRound=new Map();
+    for(const m of competitionState(t).matches) byRound.set(m.socialRound,[...(byRound.get(m.socialRound)??[]),...m.a,...m.b]);
+    let sat=new Set();
+    for(let r=1;r<=n-1;r++) {
+      const sitting=new Set(t.teams.map(x=>x.id).filter(id=>!byRound.get(r).includes(id)));
+      for(const id of sitting) assert(!sat.has(id),`${id} sat out round ${r-1} and ${r} with ${n} players, ${courts} courts`);
+      sat=sitting;
+    }
+  }
+});
+
 test('court ladder moves winners up, losers down, splits partners, and corrects dependent rounds',()=>{
   for(const n of [4,8,12,16]) {
     const t=validateTournament({...event('king_queen',8),teams:event('rotating_partners',n).teams,courts:n/4});
