@@ -179,6 +179,30 @@ hugo --source site --cacheDir "$PWD/site/.cache" --cleanDestinationDir --panicOn
 
 Output is the ignored `site/public/` directory.
 
+### Add to Home Screen (phone app)
+
+The hosted site is an installable web app: `static/manifest.webmanifest`,
+PNG icons (`icon-192/512`, `icon-maskable-512`, `apple-touch-icon`, drawn from
+`icon.svg`) and iOS meta tags in `layouts/home.html`. It opens full-screen, with
+no browser bar, and reopens offline through the same service worker. The
+offline copy (`--environment=portable`) does not link the manifest, tags or
+worker (the manifest and icon files are still in the zip, unused). Needs
+HTTPS, so it works after the first Pages deploy (or on `localhost`).
+
+- iPhone/iPad (Safari): Share → **Add to Home Screen**. Android (Chrome): menu →
+  **Install app**.
+- **The installed app has its own storage on iPhone.** An event started in a
+  Safari tab will not appear in the home-screen app (and vice versa). Download
+  a copy and open it in the other. Pick one and stay there.
+- **Display board** opens a second window, which a full-screen phone app
+  handles poorly. Use it from a laptop/tablet browser, not the installed phone
+  app.
+- Icons were rendered with macOS QuickLook from `icon.svg`; to change them,
+  re-render the four PNGs from that file.
+- **Not verified:** install prompts, icons, safe-area spacing on a notched
+  phone, or reopening offline on a real iPhone or Android. The Chromium phone
+  viewport cannot show these.
+
 ### Publishing and updating (GitHub Pages)
 
 `.github/workflows/pages.yml` runs the Node tests, builds with the real address

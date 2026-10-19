@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="A simpler way to run your community pickleball tournament. Add teams, make a schedule, and keep score on one device.">
   <meta name="theme-color" content="#103b32">
   <meta name="robots" content="noindex">
@@ -10,6 +10,14 @@
   {{ $css := resources.Get "css/style.css" | resources.ExecuteAsTemplate "assets/style.css" . | fingerprint }}
   <link rel="stylesheet" href="{{ $css.RelPermalink }}">
   <link rel="icon" href="{{ "icon.svg" | relURL }}" type="image/svg+xml">
+  {{ if ne hugo.Environment "portable" }}
+  <link rel="manifest" href="{{ "manifest.webmanifest" | relURL }}">
+  <link rel="apple-touch-icon" href="{{ "apple-touch-icon.png" | relURL }}">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Pickleball">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  {{ end }}
   {{ $js := resources.Get "js/app.js" | js.Build (dict "targetPath" "assets/app.js" "target" "es2020") | fingerprint }}
   <script src="{{ $js.RelPermalink }}" defer></script>
   {{ $poster := resources.Get "images/pickleball-poster.webp" | fingerprint }}
